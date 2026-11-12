@@ -26,9 +26,9 @@ function firstInHand(state: BattleState, definitionId: string, side: 'player' | 
 }
 
 describe('setup and decks', () => {
-  it('has exactly twelve card definitions with unique ids', () => {
-    expect(CARD_DEFINITIONS).toHaveLength(12);
-    expect(new Set(CARD_DEFINITIONS.map((c) => c.id)).size).toBe(12);
+  it('has thirteen card definitions (12 original + Lá chắn gai) with unique ids', () => {
+    expect(CARD_DEFINITIONS).toHaveLength(13);
+    expect(new Set(CARD_DEFINITIONS.map((c) => c.id)).size).toBe(13);
   });
 
   it('builds a 20-card starter deck: 5 strike, 5 guard, 1 of each other card', () => {
@@ -38,7 +38,7 @@ describe('setup and decks', () => {
     for (const c of deck) counts[c.definitionId] = (counts[c.definitionId] ?? 0) + 1;
     expect(counts.strike).toBe(5);
     expect(counts.guard).toBe(5);
-    for (const def of CARD_DEFINITIONS.filter((d) => d.id !== 'strike' && d.id !== 'guard')) {
+    for (const def of CARD_DEFINITIONS.filter((d) => !['strike', 'guard', 'thorn_shield'].includes(d.id))) {
       expect(counts[def.id]).toBe(1);
     }
   });
@@ -319,6 +319,21 @@ describe('multi-step effects', () => {
     expect(next.combatants.player.hp).toBe(28);
     expect(next.combatants.player.block).toBe(5);
     expect(next.combatants.bot.hp).toBe(20);
+  });
+
+  it('thorn_shield gains block, then deals damage equal to total block (block not spent)', () => {
+    const state = makeState({ player: { hand: ['thorn_shield'], block: 6 }, bot: { block: 3 } });
+    const result = playCard(state, 'player', firstInHand(state, 'thorn_shield'));
+    const next = ok(result);
+    expect(next.combatants.player.block).toBe(8);
+    expect(next.combatants.bot.block).toBe(0);
+    expect(next.combatants.bot.hp).toBe(25); // 8 damage, 3 absorbed
+  });
+
+  it('thorn_shield with no prior block deals 2', () => {
+    const state = makeState({ player: { hand: ['thorn_shield'] } });
+    const next = ok(playCard(state, 'player', firstInHand(state, 'thorn_shield')));
+    expect(next.combatants.bot.hp).toBe(28);
   });
 
   it('victory stops subsequent effects (first twin_strike hit kills)', () => {

@@ -330,6 +330,9 @@ function resolveEffect(ctx: Ctx, side: Side, effect: Effect): boolean {
       emit(ctx, { type: 'hpLost', side, amount, hpAfter: self.hp });
       return checkBattleEnd(ctx);
     }
+    case 'damageFromBlock':
+      dealDamage(ctx, side, self.block);
+      return checkBattleEnd(ctx);
   }
 }
 

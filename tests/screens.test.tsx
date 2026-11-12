@@ -84,11 +84,11 @@ describe('home and navigation', () => {
     expect(screen.getByText('Lượt của bạn')).toBeInTheDocument();
   });
 
-  it('rules screen lists all 12 cards and returns home', () => {
+  it('rules screen lists all 13 cards and returns home', () => {
     renderApp();
     fireEvent.click(screen.getByRole('button', { name: 'Luật chơi' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Luật chơi' })).toBeInTheDocument();
-    expect(within(screen.getByRole('list', { name: 'Danh sách 12 thẻ' })).getAllByRole('listitem')).toHaveLength(12);
+    expect(within(screen.getByRole('list', { name: 'Danh sách 13 thẻ' })).getAllByRole('listitem')).toHaveLength(13);
     expect(screen.getByText(/lượt đầu tiên của bạn chỉ có 2 Năng lượng/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Trang chủ' }));
     expect(screen.getByRole('button', { name: 'Bắt đầu' })).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('setup screen (Milestone 3)', () => {
     expect(screen.getByRole('heading', { name: 'Bạn · Bộ Phòng ngự' })).toBeInTheDocument();
     const save = loadSave()!;
     expect(save.setup).toEqual({ playerDeckId: 'fortress', opponentId: 'pyromancer' });
-    expect(allPlayerCards().filter((id) => id === 'shield_bash')).toHaveLength(7);
+    expect(allPlayerCards().filter((id) => id === 'thorn_shield')).toHaveLength(2);
     const bot = save.battle.combatants.bot;
     expect([...bot.deck, ...bot.hand, ...bot.discard].filter((c) => c.definitionId === 'ember')).toHaveLength(3);
 

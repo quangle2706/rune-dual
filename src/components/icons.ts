@@ -35,6 +35,7 @@ export const CARD_ART: Record<string, LucideIcon> = {
   twin_strike: Swords,
   cleanse: Droplets,
   desperate_blow: Skull,
+  thorn_shield: ShieldHalf,
 };
 
 /** Placeholder portraits per opponent archetype. */

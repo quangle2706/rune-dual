@@ -44,7 +44,7 @@ export const OPPONENTS: readonly OpponentDefinition[] = [
     name: 'Hộ Vệ Đá',
     title: 'Phòng ngự',
     description: 'Vừa đỡ vừa đánh bằng Khiên kích, dập Thiêu đốt sớm.',
-    deckId: 'fortress',
+    deckId: 'stoneguard',
     profile: {
       ...DEFAULT_BOT_PROFILE,
       healWeight: 1.1,
@@ -66,7 +66,11 @@ export function getOpponent(id: string): OpponentDefinition {
   return o;
 }
 
+/** Which opponent's play style best fits each player deck (for simulating the player's seat). */
+const DECK_STYLE: Record<string, string> = { balanced: 'warden', burn: 'pyromancer', fortress: 'golem', stoneguard: 'golem' };
+
 /** The bot profile that best fits a deck (used when simulating the player's seat). */
 export function profileForDeck(deckId: string): Readonly<BotProfile> {
-  return OPPONENTS.find((o) => o.deckId === deckId)?.profile ?? DEFAULT_BOT_PROFILE;
+  const id = DECK_STYLE[deckId];
+  return (id ? findOpponent(id)?.profile : undefined) ?? DEFAULT_BOT_PROFILE;
 }

@@ -1,7 +1,7 @@
 import type { CardDefinition } from '../engine/types';
 
 /**
- * The twelve original card definitions.
+ * Card definitions: the original twelve (Milestone 1) plus Lá chắn gai (Milestone 4).
  * Behavior comes ONLY from `effects`; the engine never branches on card id or name.
  * Numbers are initial tuning, not proven balanced.
  */
@@ -107,6 +107,14 @@ export const CARD_DEFINITIONS: readonly CardDefinition[] = [
       { type: 'damage', amount: 10 },
     ],
     flavor: 'Đánh đổi máu thịt lấy một cơ hội.',
+  },
+  {
+    id: 'thorn_shield',
+    name: 'Lá chắn gai',
+    cost: 1,
+    category: 'defense',
+    effects: [{ type: 'block', amount: 2 }, { type: 'damageFromBlock' }],
+    flavor: 'Càng dày khiên, gai càng sắc.',
   },
 ];
 

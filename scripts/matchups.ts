@@ -2,7 +2,7 @@
  * Matchup matrix: every player deck vs every opponent archetype, bot vs bot.
  * Usage: npm run simulate:matchups [-- <games>]
  */
-import { DECKS } from '../src/content/decks';
+import { PLAYER_DECKS as DECKS } from '../src/content/decks';
 import { OPPONENTS } from '../src/content/opponents';
 import { seedRange, simulateMatchups } from '../src/sim/simulate';
 

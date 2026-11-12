@@ -49,6 +49,8 @@ export function describeEffect(effect: Effect): string {
       return `xóa toàn bộ ${TERMS.burn} trên bản thân`;
     case 'loseHp':
       return `mất ${effect.amount} ${TERMS.hp} (bỏ qua ${TERMS.block})`;
+    case 'damageFromBlock':
+      return `gây sát thương bằng số ${TERMS.block} bạn đang có`;
   }
 }
 
@@ -74,7 +76,10 @@ export function keywordHints(card: Pick<CardDefinition, 'effects'>): string[] {
     if (effect.type === 'block') {
       hints.add(`${TERMS.block}: chặn sát thương thường trước khi mất Máu. Mất khi bắt đầu lượt kế của bạn.`);
     }
-    if (effect.type === 'damage') {
+    if (effect.type === 'damageFromBlock') {
+      hints.add(`Sát thương bằng ${TERMS.block} hiện có, tính sau các hiệu ứng trước đó. ${TERMS.block} của bạn không bị tiêu hao.`);
+    }
+    if (effect.type === 'damage' || effect.type === 'damageFromBlock') {
       hints.add(`Sát thương thường bị ${TERMS.block} của đối thủ chặn trước, phần dư trừ vào Máu.`);
     }
     if (effect.type === 'loseHp') {

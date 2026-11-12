@@ -15,6 +15,7 @@ describe('generated Vietnamese card text', () => {
     quick_cut: 'Gây 2 sát thương.',
     twin_strike: 'Gây 4 sát thương 2 lần (mỗi lần là một đòn riêng).',
     cleanse: 'Xóa toàn bộ Thiêu đốt trên bản thân, sau đó hồi 2 Máu.',
+    thorn_shield: 'Nhận 2 Giáp, sau đó gây sát thương bằng số Giáp bạn đang có.',
     desperate_blow:
       'Mất 2 Máu (bỏ qua Giáp), sau đó gây 10 sát thương. Nếu bạn gục vì mất máu, các hiệu ứng sau không xảy ra.',
   };

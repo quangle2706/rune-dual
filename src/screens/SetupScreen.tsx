@@ -2,7 +2,7 @@ import { Swords } from 'lucide-react';
 import { useState } from 'react';
 import { OPPONENT_PORTRAITS } from '../components/icons';
 import { getCardDefinition } from '../content/cards';
-import { DECKS, type DeckRecipe } from '../content/decks';
+import { PLAYER_DECKS, type DeckRecipe } from '../content/decks';
 import { OPPONENTS } from '../content/opponents';
 import type { BattleSetup } from '../content/setup';
 import { PageShell } from './PageShell';
@@ -69,7 +69,7 @@ export function SetupScreen({ initial, onStart, onBack }: Props) {
         <fieldset className="setup__group">
           <legend>Bộ bài của bạn</legend>
           <div className="choice-grid">
-            {DECKS.map((d) => {
+            {PLAYER_DECKS.map((d) => {
               const checked = setup.playerDeckId === d.id;
               return (
                 <label key={d.id} className={`choice${checked ? ' is-checked' : ''}`}>

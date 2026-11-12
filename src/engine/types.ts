@@ -21,7 +21,7 @@ export type Winner = Side | 'draw' | null;
  * battle end is checked after every atomic step.
  *
  * Targets are fixed per effect type to keep the MVP small:
- * - damage, applyBurn  -> opponent
+ * - damage, damageFromBlock, applyBurn -> opponent
  * - block, heal, draw, removeBurn, loseHp -> self
  */
 export type Effect =
@@ -31,7 +31,9 @@ export type Effect =
   | { type: 'draw'; count: number }
   | { type: 'applyBurn'; amount: number }
   | { type: 'removeBurn' }
-  | { type: 'loseHp'; amount: number };
+  | { type: 'loseHp'; amount: number }
+  /** Normal damage equal to the user's block at the moment it resolves (block is not spent). */
+  | { type: 'damageFromBlock' };
 
 export type EffectType = Effect['type'];
 

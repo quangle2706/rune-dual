@@ -35,7 +35,7 @@ describe('decks and opponents', () => {
       return [...c.deck, ...c.hand, ...c.discard].map((x) => x.definitionId);
     };
     expect(all('player').filter((id) => id === 'ember')).toHaveLength(3);
-    expect(all('bot').filter((id) => id === 'shield_bash')).toHaveLength(7);
+    expect(all('bot').filter((id) => id === 'shield_bash')).toHaveLength(7); // golem uses the stoneguard deck
   });
 
   it('sanitizeSetup replaces unknown ids', () => {

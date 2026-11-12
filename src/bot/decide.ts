@@ -57,8 +57,19 @@ interface Candidate {
   def: CardDefinition;
 }
 
-export function totalDamage(def: CardDefinition): number {
-  return def.effects.reduce((sum, e) => (e.type === 'damage' ? sum + e.amount * (e.hits ?? 1) : sum), 0);
+/**
+ * Damage the card would deal, resolving effects in order.
+ * `selfBlock` is the user's current block (matters for damageFromBlock).
+ */
+export function totalDamage(def: CardDefinition, selfBlock = 0): number {
+  let block = selfBlock;
+  let sum = 0;
+  for (const e of def.effects) {
+    if (e.type === 'damage') sum += e.amount * (e.hits ?? 1);
+    else if (e.type === 'block') block += e.amount;
+    else if (e.type === 'damageFromBlock') sum += block;
+  }
+  return sum;
 }
 
 function selfHpCost(def: CardDefinition): number {
@@ -86,8 +97,8 @@ function compareCandidates(a: Candidate, b: Candidate): number {
 function findLethal(view: BotView, affordable: Candidate[]): Candidate | null {
   // Normal hands hold at most 8 cards; cap the search defensively anyway.
   const attackers = affordable
-    .filter((c) => totalDamage(c.def) > 0)
-    .sort((a, b) => totalDamage(b.def) - totalDamage(a.def) || compareCandidates(a, b))
+    .filter((c) => totalDamage(c.def, view.self.block) > 0)
+    .sort((a, b) => totalDamage(b.def, view.self.block) - totalDamage(a.def, view.self.block) || compareCandidates(a, b))
     .slice(0, 10);
   const needed = view.opponent.hp + view.opponent.block;
   let best: Candidate[] | null = null;
@@ -95,12 +106,17 @@ function findLethal(view: BotView, affordable: Candidate[]): Candidate | null {
     const subset = attackers.filter((_, i) => mask & (1 << i));
     const cost = subset.reduce((s, c) => s + c.def.cost, 0);
     const selfLoss = subset.reduce((s, c) => s + selfHpCost(c.def), 0);
-    const damage = subset.reduce((s, c) => s + totalDamage(c.def), 0);
+    // Approximation: block gained by other cards in the subset is ignored (under-estimates).
+    const damage = subset.reduce((s, c) => s + totalDamage(c.def, view.self.block), 0);
     if (cost > view.self.energy || selfLoss >= view.self.hp || damage < needed) continue;
     if (!best || subset.length < best.length) best = subset;
   }
   if (!best) return null;
-  return [...best].sort((a, b) => totalDamage(b.def) - totalDamage(a.def) || compareCandidates(a, b))[0] ?? null;
+  return (
+    [...best].sort(
+      (a, b) => totalDamage(b.def, view.self.block) - totalDamage(a.def, view.self.block) || compareCandidates(a, b),
+    )[0] ?? null
+  );
 }
 
 /** How many recent opponent turns the incoming-damage estimate looks at. */
@@ -136,6 +152,7 @@ export function estimateIncomingDamage(view: BotView, profile: Readonly<BotProfi
 export function scoreCard(view: BotView, def: CardDefinition, profile: Readonly<BotProfile> = DEFAULT_BOT_PROFILE): number {
   const { self, opponent } = view;
   const incoming = estimateIncomingDamage(view, profile);
+  let block = self.block; // tracks block gained earlier in this card's own effects
   let score = 0;
   let hp = self.hp;
   for (const effect of def.effects) {
@@ -151,6 +168,7 @@ export function scoreCard(view: BotView, def: CardDefinition, profile: Readonly<
         const needed = Math.max(0, incoming - self.block);
         const danger = hp <= incoming ? 1.5 : 1;
         score += Math.min(effect.amount, needed) * danger * profile.blockWeight;
+        block += effect.amount;
         break;
       }
       case 'heal': {
@@ -175,6 +193,12 @@ export function scoreCard(view: BotView, def: CardDefinition, profile: Readonly<
       case 'removeBurn':
         score += Math.min(burnTotal(self.burn), hp);
         break;
+      case 'damageFromBlock': {
+        const absorbed = Math.min(block, opponent.block);
+        const hpDamage = Math.min(opponent.hp, block - absorbed);
+        score += (hpDamage + absorbed * 0.3) * profile.damageWeight;
+        break;
+      }
       case 'loseHp':
         if (effect.amount >= hp) return -Infinity; // would defeat itself
         score -= effect.amount * (hp <= 10 ? 3 : 1.2);

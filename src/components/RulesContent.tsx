@@ -53,12 +53,12 @@ export function RulesContent({ headingLevel = 3, showCards = false }: { headingL
         <li>Chạm vào thẻ để xem chi tiết, rồi bấm “Dùng thẻ”.</li>
         <li>Tối đa {r.handLimit} thẻ trên tay. Hết chồng bài thì xáo bài đã dùng thành chồng mới.</li>
         <li>Hiệu ứng xảy ra theo thứ tự ghi trên thẻ. Nếu trận kết thúc giữa chừng, các hiệu ứng sau bị bỏ qua.</li>
-        <li>Mỗi bên có bộ bài 20 thẻ giống nhau: 5 Chém, 5 Phòng thủ và 1 thẻ cho mỗi loại còn lại.</li>
+        <li>Mỗi bộ bài có 20 thẻ. Bạn chọn bộ bài và Đối thủ ở màn hình “Chuẩn bị trận”.</li>
       </ul>
       {showCards && (
         <>
           <H>Tất cả thẻ</H>
-          <ul className="rules__cards" aria-label="Danh sách 12 thẻ">
+          <ul className="rules__cards" aria-label={`Danh sách ${CARD_DEFINITIONS.length} thẻ`}>
             {CARD_DEFINITIONS.map((c) => (
               <li key={c.id}>
                 <CardFace definitionId={c.id} />

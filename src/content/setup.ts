@@ -1,4 +1,4 @@
-import { DEFAULT_DECK_ID, findDeck, getDeck } from './decks';
+import { DEFAULT_DECK_ID, PLAYER_DECKS, getDeck } from './decks';
 import { DEFAULT_OPPONENT_ID, findOpponent, getOpponent } from './opponents';
 import type { BattleDecks } from '../engine/battle';
 
@@ -18,7 +18,9 @@ export function sanitizeSetup(value: unknown): BattleSetup {
   const v = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
   return {
     playerDeckId:
-      typeof v.playerDeckId === 'string' && findDeck(v.playerDeckId) ? v.playerDeckId : DEFAULT_SETUP.playerDeckId,
+      typeof v.playerDeckId === 'string' && PLAYER_DECKS.some((d) => d.id === v.playerDeckId)
+        ? v.playerDeckId
+        : DEFAULT_SETUP.playerDeckId,
     opponentId: typeof v.opponentId === 'string' && findOpponent(v.opponentId) ? v.opponentId : DEFAULT_SETUP.opponentId,
   };
 }
