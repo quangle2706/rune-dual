@@ -1,8 +1,10 @@
 name: Deploy to GitHub Pages
 
-# Manual only: publishing is a deliberate choice. Before the first run, enable
-# Pages in the repository: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# Every push to main is verified (types, unit tests, build, browser smoke tests)
+# and deployed only if everything passes. Can also be run manually.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -17,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -24,8 +28,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results
+          retention-days: 7
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

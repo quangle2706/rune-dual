@@ -3,3 +3,5 @@ dist
 *.tsbuildinfo
 coverage
 .vite
+test-results
+playwright-report

@@ -1,8 +1,9 @@
 name: CI
 
+# Branches and pull requests. Pushes to main are verified and deployed by deploy-pages.yml.
 on:
   push:
-    branches: [main, 'milestone-*']
+    branches-ignore: [main]
   pull_request:
 
 permissions:
@@ -11,6 +12,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -21,3 +24,11 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Uses the Google Chrome preinstalled on ubuntu-latest (channel: 'chrome').
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results
+          retention-days: 7
