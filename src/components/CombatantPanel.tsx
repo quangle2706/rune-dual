@@ -1,4 +1,5 @@
-import { Archive, Bot, Flame, Heart, Layers, Shield, User, Zap, type LucideIcon } from 'lucide-react';
+import { Archive, Flame, Heart, Layers, Shield, Zap } from 'lucide-react';
+import { PlayerPortrait, WardenPortrait, type PortraitComponent } from './Portraits';
 import type { BattleEvent, Combatant, Side } from '../engine/types';
 import { SIDE_NAMES, TERMS } from '../content/text';
 
@@ -37,7 +38,7 @@ interface Props {
   energyPerTurn?: number;
   /** Display name (defaults: "Bạn" / "Đối thủ"). */
   name?: string;
-  portrait?: LucideIcon;
+  portrait?: PortraitComponent;
 }
 
 export function CombatantPanel({
@@ -55,7 +56,7 @@ export function CombatantPanel({
   const pct = Math.round((c.hp / c.maxHp) * 100);
   const chips = chipsFor(side, events);
   const hit = chips.some((ch) => ch.kind === 'damage' || ch.kind === 'burn');
-  const Portrait = portrait ?? (side === 'bot' ? Bot : User);
+  const Portrait = portrait ?? (side === 'bot' ? WardenPortrait : PlayerPortrait);
   const name = displayName ?? (side === 'bot' ? 'Đối thủ' : 'Bạn');
 
   return (
@@ -64,7 +65,7 @@ export function CombatantPanel({
       aria-label={`${SIDE_NAMES[side]}: ${c.hp}/${c.maxHp} ${TERMS.hp}, ${c.block} ${TERMS.block}, ${c.burn} ${TERMS.burn}`}
     >
       <div className={`combatant__portrait${hit ? ' is-hit' : ''}`} key={hit ? chips[chips.length - 1]?.id : 'idle'} aria-hidden="true">
-        <Portrait size={side === 'bot' ? 34 : 26} strokeWidth={1.5} />
+        <Portrait size={side === 'bot' ? 56 : 42} />
       </div>
       <div className="combatant__body">
         <div className="combatant__title">

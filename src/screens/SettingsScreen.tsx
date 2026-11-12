@@ -90,6 +90,33 @@ export function SettingsScreen({ settings, onChange, hasSave, onClearSave, onBac
         </fieldset>
 
         <fieldset className="settings__group">
+          <legend>Nhạc nền</legend>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={settings.musicEnabled}
+              onChange={(e) => {
+                soundPlayer.unlock();
+                set({ musicEnabled: e.target.checked });
+              }}
+            />
+            <span>Bật nhạc nền trong trận</span>
+          </label>
+          <label className="slider">
+            <span>Âm lượng nhạc: {Math.round(settings.musicVolume * 100)}%</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(settings.musicVolume * 100)}
+              disabled={!settings.musicEnabled}
+              onChange={(e) => set({ musicVolume: Number(e.target.value) / 100 })}
+            />
+          </label>
+        </fieldset>
+
+        <fieldset className="settings__group">
           <legend>Chuyển động</legend>
           {MOTIONS.map(([value, label, hint]) => (
             <label key={value} className="radio-row">

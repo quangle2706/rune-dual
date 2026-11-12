@@ -153,7 +153,12 @@ describe('settings screen', () => {
     const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY)!);
     expect(stored).toMatchObject({ botSpeed: 'fast', soundEnabled: false, motion: 'reduced' });
     expect(document.documentElement.dataset.motion).toBe('reduced');
-    expect(screen.getByRole('slider')).toBeDisabled();
+    expect(screen.getByRole('slider', { name: /^Âm lượng:/ })).toBeDisabled();
+    // Music is off by default; enabling it enables its volume slider and is saved.
+    expect(screen.getByRole('slider', { name: /^Âm lượng nhạc/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Bật nhạc nền trong trận' }));
+    expect(screen.getByRole('slider', { name: /^Âm lượng nhạc/ })).toBeEnabled();
+    expect(JSON.parse(localStorage.getItem(SETTINGS_KEY)!).musicEnabled).toBe(true);
   });
 
   it('clears the saved battle', () => {

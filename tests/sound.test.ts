@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MusicPlayer, midiToHz } from '../src/audio/music';
 import { SoundPlayer, soundsForEvents } from '../src/audio/sound';
 import { playCard } from '../src/engine/battle';
 import type { BattleEvent } from '../src/engine/types';
@@ -24,6 +25,20 @@ describe('soundsForEvents', () => {
   it('collapses repeats and always keeps the battle-end sound last', () => {
     expect(soundsForEvents(eventsOf(['twin_strike']))).toEqual(['card', 'hit']);
     expect(soundsForEvents(eventsOf(['strike'], 3))).toEqual(['card', 'hit', 'victory']);
+  });
+});
+
+describe('MusicPlayer', () => {
+  it('converts MIDI to Hz', () => {
+    expect(midiToHz(69)).toBe(440);
+    expect(midiToHz(57)).toBeCloseTo(220);
+  });
+
+  it('does not start (and does not throw) without a running AudioContext', () => {
+    const m = new MusicPlayer();
+    expect(m.start()).toBe(false);
+    expect(m.playing).toBe(false);
+    expect(() => m.stop()).not.toThrow();
   });
 });
 

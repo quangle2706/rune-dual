@@ -12,7 +12,8 @@ import { TUTORIAL_HIGHLIGHT, TutorialPanel, tutorialStep } from '../components/T
 import { getCardDefinition } from '../content/cards';
 import { getDeck } from '../content/decks';
 import { getOpponent } from '../content/opponents';
-import { OPPONENT_PORTRAITS } from '../components/icons';
+import { OPPONENT_PORTRAITS } from '../components/Portraits';
+import { musicPlayer } from '../audio/music';
 import { REJECTION_MESSAGES, describeCard, keywordHints } from '../content/text';
 import { getEndTurnRejection, getPlayRejection } from '../engine/battle';
 import type { BattleEvent, BattleState } from '../engine/types';
@@ -106,6 +107,8 @@ export interface BattleScreenProps extends ControllerOptions {
   tutorial?: boolean;
   /** Called when the tutorial is finished or skipped. */
   onTutorialDone?: () => void;
+  /** Background music settings. */
+  music?: { enabled: boolean; volume: number };
 }
 
 export function BattleScreen({
@@ -113,6 +116,7 @@ export function BattleScreen({
   persist = true,
   tutorial = false,
   onTutorialDone,
+  music,
   ...controllerOptions
 }: BattleScreenProps) {
   const { ui, select, play, endTurn, restart, dismissNotice, pageHidden } = useBattleController(controllerOptions);
@@ -138,6 +142,21 @@ export function BattleScreen({
     if (ui.battle.phase === 'GAME_OVER') clearSave();
     else saveBattle(ui.battle, ui.stats, undefined, ui.setup);
   }, [persist, ui.battle, ui.stats, ui.setup]);
+
+  // Background music plays only on the battle screen, while visible and enabled.
+  const musicOn = !!music?.enabled && !pageHidden;
+  useEffect(() => {
+    if (music) musicPlayer.setVolume(music.volume);
+  }, [music]);
+  useEffect(() => {
+    if (!musicOn) return;
+    musicPlayer.start(); // may not start until the first user gesture unlocks audio
+    return () => musicPlayer.stop();
+  }, [musicOn]);
+  const unlockAudioAndMusic = () => {
+    soundPlayer.unlock();
+    if (musicOn) setTimeout(() => musicPlayer.start(), 50);
+  };
 
   // Personal records: count each finished battle once (token dedupes StrictMode/remounts).
   useEffect(() => {
@@ -179,7 +198,7 @@ export function BattleScreen({
   }, [ui.selectedId]);
 
   return (
-    <div className="app" onPointerDown={() => soundPlayer.unlock()} onKeyDown={() => soundPlayer.unlock()}>
+    <div className="app" onPointerDown={unlockAudioAndMusic} onKeyDown={unlockAudioAndMusic}>
       <header className="topbar">
         <div className="brand">
           <span className="brand__mark" aria-hidden="true">◆</span>
@@ -234,7 +253,10 @@ export function BattleScreen({
           </div>
         </section>
 
-        <section className={`player-area${highlight ? ` tutorial-on-${highlight}` : ''}`} aria-label="Khu vực của bạn">
+        <section
+          className={`player-area${step ? ' has-tutorial' : ''}${highlight ? ` tutorial-on-${highlight}` : ''}`}
+          aria-label="Khu vực của bạn"
+        >
           {step && (
             <TutorialPanel step={step} onSkip={() => onTutorialDone?.()} onFinish={() => onTutorialDone?.()} />
           )}

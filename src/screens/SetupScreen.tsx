@@ -1,6 +1,6 @@
 import { Swords } from 'lucide-react';
 import { useState } from 'react';
-import { OPPONENT_PORTRAITS } from '../components/icons';
+import { OPPONENT_PORTRAITS } from '../components/Portraits';
 import { getCardDefinition } from '../content/cards';
 import { PLAYER_DECKS, type DeckRecipe } from '../content/decks';
 import { OPPONENTS } from '../content/opponents';
@@ -51,7 +51,7 @@ export function SetupScreen({ initial, onStart, onBack }: Props) {
                   <span className="choice__head">
                     {Portrait && (
                       <span className="choice__portrait" aria-hidden="true">
-                        <Portrait size={24} strokeWidth={1.6} />
+                        <Portrait size={38} />
                       </span>
                     )}
                     <span>

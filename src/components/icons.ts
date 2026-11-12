@@ -1,12 +1,10 @@
 import {
-  Bot,
   Castle,
   Droplets,
   Eye,
   Flame,
   Hammer,
   HeartPulse,
-  Mountain,
   Shield,
   ShieldHalf,
   Skull,
@@ -36,13 +34,6 @@ export const CARD_ART: Record<string, LucideIcon> = {
   cleanse: Droplets,
   desperate_blow: Skull,
   thorn_shield: ShieldHalf,
-};
-
-/** Placeholder portraits per opponent archetype. */
-export const OPPONENT_PORTRAITS: Record<string, LucideIcon> = {
-  warden: Bot,
-  pyromancer: Flame,
-  golem: Mountain,
 };
 
 export const CATEGORY_ICONS: Record<CardCategory, LucideIcon> = {

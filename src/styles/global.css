@@ -1602,3 +1602,48 @@ button {
     font-size: 13px;
   }
 }
+
+/* ----- Card scenes & portraits (Milestone 4) ------------------------------ */
+.card-face__art {
+  position: relative;
+  overflow: hidden;
+  background: #1b1e28;
+}
+.card-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.card-face__emblem {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 0 5px rgb(255 255 255 / 0.55)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
+}
+.combatant__portrait svg,
+.choice__portrait svg {
+  display: block;
+}
+.combatant__portrait {
+  overflow: hidden;
+}
+
+/* Tutorial row sits at the top of the player area. */
+.player-area.has-tutorial {
+  grid-template-areas:
+    'tutorial tutorial'
+    'stats stats'
+    'hand detail';
+}
+.player-area > .tutorial {
+  grid-area: tutorial;
+}
+@media (max-width: 900px) {
+  .player-area.has-tutorial {
+    grid-template-areas:
+      'tutorial'
+      'stats'
+      'detail'
+      'hand';
+  }
+}

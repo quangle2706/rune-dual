@@ -1,5 +1,6 @@
 import { getCardDefinition } from '../content/cards';
 import { CATEGORY_LABELS, describeCard } from '../content/text';
+import { CardScene } from './CardScene';
 import { CARD_ART, CATEGORY_ICONS } from './icons';
 
 interface CardFaceProps {
@@ -21,7 +22,8 @@ export function CardFace({ definitionId, size = 'hand' }: CardFaceProps) {
         <span className="card-face__name">{def.name}</span>
       </div>
       <div className="card-face__art" aria-hidden="true">
-        <Art size={size === 'large' ? 56 : size === 'mini' ? 28 : 34} strokeWidth={1.6} />
+        <CardScene category={def.category} />
+        <Art className="card-face__emblem" size={size === 'large' ? 52 : size === 'mini' ? 26 : 32} strokeWidth={1.6} />
       </div>
       <div className="card-face__type">
         <CategoryIcon size={14} aria-hidden="true" />

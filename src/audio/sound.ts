@@ -3,15 +3,9 @@
  * Presentation only: sounds are derived from engine events after the fact.
  */
 import type { BattleEvent } from '../engine/types';
+import { getAudioContext, unlockAudio } from './context';
 
 export type SoundName = 'card' | 'hit' | 'block' | 'heal' | 'burn' | 'turn' | 'victory' | 'defeat' | 'draw';
-
-type Ctor = typeof AudioContext;
-
-function getAudioContextCtor(): Ctor | null {
-  const g = globalThis as unknown as { AudioContext?: Ctor; webkitAudioContext?: Ctor };
-  return g.AudioContext ?? g.webkitAudioContext ?? null;
-}
 
 interface Tone {
   freq: number;
@@ -64,31 +58,17 @@ const RECIPES: Record<SoundName, Tone[]> = {
 };
 
 export class SoundPlayer {
-  private ctx: AudioContext | null = null;
   enabled = true;
   volume = 0.6;
 
   /** Must be called from a user gesture at least once (browser autoplay rules). */
   unlock(): void {
-    const ctx = this.context();
-    if (ctx && ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
-  }
-
-  private context(): AudioContext | null {
-    if (this.ctx) return this.ctx;
-    const Ctor = getAudioContextCtor();
-    if (!Ctor) return null;
-    try {
-      this.ctx = new Ctor();
-    } catch {
-      return null;
-    }
-    return this.ctx;
+    unlockAudio();
   }
 
   play(name: SoundName, delaySeconds = 0): void {
     if (!this.enabled || this.volume <= 0) return;
-    const ctx = this.context();
+    const ctx = getAudioContext();
     if (!ctx || ctx.state !== 'running') return;
     const t0 = ctx.currentTime + delaySeconds;
     for (const tone of RECIPES[name]) {

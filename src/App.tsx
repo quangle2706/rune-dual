@@ -93,6 +93,7 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
           botThinkDelay={botThinkDelay ?? think}
           botStepDelay={botStepDelay ?? step}
           tutorial={!settings.tutorialDone}
+          music={{ enabled: settings.musicEnabled, volume: settings.musicVolume }}
           onTutorialDone={() => updateSettings({ ...settings, tutorialDone: true })}
         />
       );
