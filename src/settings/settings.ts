@@ -10,6 +10,12 @@ export interface Settings {
   /** 0..1 */
   volume: number;
   motion: MotionPreference;
+  /** Background music (off by default: no surprise audio). */
+  musicEnabled: boolean;
+  /** 0..1 */
+  musicVolume: number;
+  /** True once the first-battle tutorial was finished or skipped. */
+  tutorialDone: boolean;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
@@ -17,6 +23,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   soundEnabled: true,
   volume: 0.6,
   motion: 'system',
+  musicEnabled: false,
+  musicVolume: 0.4,
+  tutorialDone: false,
 };
 
 /** [delay before the bot's first action, delay between later actions] in ms. */
@@ -39,6 +48,12 @@ export function sanitizeSettings(value: unknown): Settings {
         ? Math.min(1, Math.max(0, v.volume))
         : DEFAULT_SETTINGS.volume,
     motion: v.motion === 'reduced' || v.motion === 'system' ? v.motion : DEFAULT_SETTINGS.motion,
+    musicEnabled: typeof v.musicEnabled === 'boolean' ? v.musicEnabled : DEFAULT_SETTINGS.musicEnabled,
+    musicVolume:
+      typeof v.musicVolume === 'number' && Number.isFinite(v.musicVolume)
+        ? Math.min(1, Math.max(0, v.musicVolume))
+        : DEFAULT_SETTINGS.musicVolume,
+    tutorialDone: typeof v.tutorialDone === 'boolean' ? v.tutorialDone : DEFAULT_SETTINGS.tutorialDone,
   };
 }
 

@@ -7,6 +7,8 @@ import { HelpPanel } from '../components/HelpPanel';
 import { ResultDialog } from '../components/ResultDialog';
 import { soundPlayer, soundsForEvents } from '../audio/sound';
 import { clearSave, saveBattle } from '../persistence/save';
+import { recordResult } from '../persistence/records';
+import { TUTORIAL_HIGHLIGHT, TutorialPanel, tutorialStep } from '../components/Tutorial';
 import { getCardDefinition } from '../content/cards';
 import { getDeck } from '../content/decks';
 import { getOpponent } from '../content/opponents';
@@ -100,9 +102,19 @@ export interface BattleScreenProps extends ControllerOptions {
   onExit?: () => void;
   /** Save after every change (default true). */
   persist?: boolean;
+  /** Show the first-battle tutorial. */
+  tutorial?: boolean;
+  /** Called when the tutorial is finished or skipped. */
+  onTutorialDone?: () => void;
 }
 
-export function BattleScreen({ onExit, persist = true, ...controllerOptions }: BattleScreenProps) {
+export function BattleScreen({
+  onExit,
+  persist = true,
+  tutorial = false,
+  onTutorialDone,
+  ...controllerOptions
+}: BattleScreenProps) {
   const { ui, select, play, endTurn, restart, dismissNotice, pageHidden } = useBattleController(controllerOptions);
   const [helpOpen, setHelpOpen] = useState(false);
   const [reviewingBattleId, setReviewingBattleId] = useState<number | null>(null);
@@ -127,6 +139,12 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
     else saveBattle(ui.battle, ui.stats, undefined, ui.setup);
   }, [persist, ui.battle, ui.stats, ui.setup]);
 
+  // Personal records: count each finished battle once (token dedupes StrictMode/remounts).
+  useEffect(() => {
+    if (!persist || ui.battle.phase !== 'GAME_OVER' || ui.battle.winner === null) return;
+    recordResult(ui.setup, ui.battle.winner, `${ui.battle.seed}:${ui.battle.turnNumber}:${ui.battle.nextEventId}`);
+  }, [persist, ui.battle, ui.setup]);
+
   // Sounds derived from the latest events. The ref (kept across StrictMode's
   // remount) ensures each event sounds at most once.
   useEffect(() => {
@@ -142,6 +160,15 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
   }, [ui.battleId]);
 
   const showResult = battle.phase === 'GAME_OVER' && battle.winner !== null && reviewingBattleId !== ui.battleId;
+  const step = tutorial
+    ? tutorialStep({
+        phase: battle.phase,
+        turnNumber: battle.turnNumber,
+        hasSelection: ui.selectedId !== null,
+        playerCardsPlayed: ui.stats.cardsPlayed.player,
+      })
+    : null;
+  const highlight = step ? TUTORIAL_HIGHLIGHT[step] : null;
 
   // Presentation only: on narrow screens, bring the inspected card into view above the sticky hand.
   useEffect(() => {
@@ -207,7 +234,10 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
           </div>
         </section>
 
-        <section className="player-area" aria-label="Khu vực của bạn">
+        <section className={`player-area${highlight ? ` tutorial-on-${highlight}` : ''}`} aria-label="Khu vực của bạn">
+          {step && (
+            <TutorialPanel step={step} onSkip={() => onTutorialDone?.()} onFinish={() => onTutorialDone?.()} />
+          )}
           <CombatantPanel
             side="player"
             combatant={player}

@@ -109,6 +109,20 @@ export function SettingsScreen({ settings, onChange, hasSave, onClearSave, onBac
         </fieldset>
 
         <fieldset className="settings__group">
+          <legend>Hướng dẫn</legend>
+          <p className="muted">Hướng dẫn hiện trong trận đầu tiên. Bạn có thể xem lại ở trận kế tiếp.</p>
+          <button
+            type="button"
+            className="btn"
+            disabled={!settings.tutorialDone}
+            onClick={() => set({ tutorialDone: false })}
+          >
+            Xem lại hướng dẫn
+          </button>
+          {!settings.tutorialDone && <p className="muted">Hướng dẫn sẽ hiện ở trận tiếp theo.</p>}
+        </fieldset>
+
+        <fieldset className="settings__group">
           <legend>Trận đã lưu</legend>
           <p className="muted">Trận đang chơi được tự động lưu trên thiết bị này.</p>
           <button

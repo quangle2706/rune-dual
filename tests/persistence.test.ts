@@ -135,7 +135,15 @@ describe('settings', () => {
 
   it('persists and reloads', () => {
     const store = memoryStore();
-    const next = { botSpeed: 'fast' as const, soundEnabled: false, volume: 0.25, motion: 'reduced' as const };
+    const next = {
+      botSpeed: 'fast' as const,
+      soundEnabled: false,
+      volume: 0.25,
+      motion: 'reduced' as const,
+      musicEnabled: true,
+      musicVolume: 0.3,
+      tutorialDone: true,
+    };
     saveSettings(next, store);
     expect(loadSettings(store)).toEqual(next);
   });

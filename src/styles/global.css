@@ -1503,3 +1503,102 @@ button {
     align-self: stretch;
   }
 }
+
+/* ----- Tutorial (Milestone 4) ----------------------------------------------- */
+.tutorial {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gold);
+  background: linear-gradient(90deg, rgb(216 182 106 / 0.16), rgb(34 41 56 / 0.9));
+  animation: fadeIn 0.3s ease-out;
+}
+.tutorial__icon {
+  color: var(--gold-strong);
+  flex: none;
+}
+.tutorial__text {
+  flex: 1;
+  min-width: 0;
+}
+.tutorial__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--gold-strong);
+}
+.tutorial__body {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+.tutorial-on-hand .hand-area,
+.tutorial-on-play .btn--play,
+.tutorial-on-end .btn--end {
+  box-shadow: 0 0 0 3px var(--gold-strong), 0 0 18px rgb(233 205 139 / 0.45);
+}
+
+/* ----- Stats screen --------------------------------------------------------- */
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+.stats-summary > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+.stats-summary strong {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--gold-strong);
+}
+.stats-summary span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.stats-table th,
+.stats-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+.stats-table thead th {
+  color: var(--gold);
+  font-size: 14px;
+}
+.stats-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (max-width: 600px) {
+  .stats-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tutorial {
+    padding: 8px 10px;
+  }
+  .tutorial__body {
+    font-size: 13px;
+  }
+}

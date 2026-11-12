@@ -1,4 +1,4 @@
-import { BookOpen, Play, RotateCcw, Settings as SettingsIcon } from 'lucide-react';
+import { BarChart3, BookOpen, Play, RotateCcw, Settings as SettingsIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 interface Props {
@@ -8,10 +8,11 @@ interface Props {
   onStart: () => void;
   onResume: () => void;
   onRules: () => void;
+  onStats: () => void;
   onSettings: () => void;
 }
 
-export function HomeScreen({ canResume, resumeLabel, onStart, onResume, onRules, onSettings }: Props) {
+export function HomeScreen({ canResume, resumeLabel, onStart, onResume, onRules, onStats, onSettings }: Props) {
   const firstRef = useRef<HTMLButtonElement>(null);
   useEffect(() => firstRef.current?.focus(), []);
 
@@ -44,6 +45,9 @@ export function HomeScreen({ canResume, resumeLabel, onStart, onResume, onRules,
         </button>
         <button type="button" className="btn home__btn" onClick={onRules}>
           <BookOpen size={20} aria-hidden="true" /> Luật chơi
+        </button>
+        <button type="button" className="btn home__btn" onClick={onStats}>
+          <BarChart3 size={20} aria-hidden="true" /> Thống kê
         </button>
         <button type="button" className="btn home__btn" onClick={onSettings}>
           <SettingsIcon size={20} aria-hidden="true" /> Cài đặt

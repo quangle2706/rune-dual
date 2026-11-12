@@ -9,6 +9,7 @@ import { HomeScreen } from './screens/HomeScreen';
 import { RulesScreen } from './screens/RulesScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { SetupScreen } from './screens/SetupScreen';
+import { StatsScreen } from './screens/StatsScreen';
 import {
   BOT_DELAYS,
   loadLastSetup,
@@ -18,7 +19,7 @@ import {
   type Settings,
 } from './settings/settings';
 
-export type Screen = 'home' | 'setup' | 'battle' | 'rules' | 'settings';
+export type Screen = 'home' | 'setup' | 'battle' | 'rules' | 'settings' | 'stats';
 
 export interface AppProps
   extends Pick<ControllerOptions, 'initialSeed' | 'seedSource' | 'botThinkDelay' | 'botStepDelay'> {
@@ -91,12 +92,16 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
           resume={resume ? { battle: resume.battle, stats: resume.stats, setup: resume.setup } : undefined}
           botThinkDelay={botThinkDelay ?? think}
           botStepDelay={botStepDelay ?? step}
+          tutorial={!settings.tutorialDone}
+          onTutorialDone={() => updateSettings({ ...settings, tutorialDone: true })}
         />
       );
     case 'setup':
       return <SetupScreen initial={setup} onStart={startNew} onBack={goHome} />;
     case 'rules':
       return <RulesScreen onBack={goHome} />;
+    case 'stats':
+      return <StatsScreen onBack={goHome} />;
     case 'settings':
       return (
         <SettingsScreen
@@ -118,6 +123,7 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
           onStart={() => setScreen('setup')}
           onResume={resumeSaved}
           onRules={() => setScreen('rules')}
+          onStats={() => setScreen('stats')}
           onSettings={() => setScreen('settings')}
         />
       );
