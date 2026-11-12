@@ -1,3 +1,4 @@
+import { sanitizeSetup, type BattleSetup } from '../content/setup';
 import { browserStore, readJson, type KeyValueStore } from '../persistence/storage';
 
 export type BotSpeed = 'slow' | 'normal' | 'fast';
@@ -47,4 +48,15 @@ export function loadSettings(store: KeyValueStore = browserStore): Settings {
 
 export function saveSettings(settings: Settings, store: KeyValueStore = browserStore): void {
   store.set(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+export const SETUP_KEY = 'rune-duel/last-setup';
+
+/** The deck/opponent chosen last time, preselected on the setup screen. */
+export function loadLastSetup(store: KeyValueStore = browserStore): BattleSetup {
+  return sanitizeSetup(readJson(store, SETUP_KEY));
+}
+
+export function saveLastSetup(setup: BattleSetup, store: KeyValueStore = browserStore): void {
+  store.set(SETUP_KEY, JSON.stringify(setup));
 }

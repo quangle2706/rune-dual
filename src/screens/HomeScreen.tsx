@@ -3,14 +3,15 @@ import { useEffect, useRef } from 'react';
 
 interface Props {
   canResume: boolean;
-  resumeTurn: number | null;
+  /** e.g. "Lượt 5 · Hỏa Ấn Sư" */
+  resumeLabel: string | null;
   onStart: () => void;
   onResume: () => void;
   onRules: () => void;
   onSettings: () => void;
 }
 
-export function HomeScreen({ canResume, resumeTurn, onStart, onResume, onRules, onSettings }: Props) {
+export function HomeScreen({ canResume, resumeLabel, onStart, onResume, onRules, onSettings }: Props) {
   const firstRef = useRef<HTMLButtonElement>(null);
   useEffect(() => firstRef.current?.focus(), []);
 
@@ -25,12 +26,12 @@ export function HomeScreen({ canResume, resumeTurn, onStart, onResume, onRules, 
         Rune Duel
         <span className="home__subtitle">Đấu Ấn</span>
       </h1>
-      <p className="home__tagline">Đấu thẻ theo lượt với Người Gác Ấn. Dùng Năng lượng khôn ngoan, giữ Giáp, đốt cháy đối thủ.</p>
+      <p className="home__tagline">Đấu thẻ theo lượt với ba Đối thủ ấn thuật. Chọn bộ bài, dùng Năng lượng khôn ngoan, giữ Giáp, đốt cháy đối thủ.</p>
       <nav className="home__menu" aria-label="Menu chính">
         {canResume && (
           <button ref={firstRef} type="button" className="btn btn--gold home__btn" onClick={onResume}>
             <RotateCcw size={20} aria-hidden="true" /> Tiếp tục trận
-            {resumeTurn !== null && <span className="home__hint">Lượt {resumeTurn}</span>}
+            {resumeLabel && <span className="home__hint">{resumeLabel}</span>}
           </button>
         )}
         <button

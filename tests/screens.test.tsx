@@ -35,6 +35,7 @@ describe('home and navigation', () => {
   it('starts a battle, saves it, and resumes the same state from home', () => {
     renderApp();
     fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }));
+    fireEvent.click(screen.getByRole('button', { name: /Vào trận/ }));
     expect(screen.getByText('Lượt của bạn')).toBeInTheDocument();
 
     // Play one card so the saved state differs from a fresh battle.
@@ -48,7 +49,7 @@ describe('home and navigation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Trang chủ' }));
     const resume = screen.getByRole('button', { name: /Tiếp tục trận/ });
-    expect(resume).toHaveTextContent('Lượt 1');
+    expect(resume).toHaveTextContent('Lượt 1 · Người Gác Ấn');
     fireEvent.click(resume);
 
     expect(handButtons().map((b) => b.getAttribute('aria-label'))).toEqual(handAfter);
@@ -60,6 +61,7 @@ describe('home and navigation', () => {
     saveBattle(createBattle(1).state, emptyStats());
     renderApp();
     fireEvent.click(screen.getByRole('button', { name: 'Trận mới' }));
+    fireEvent.click(screen.getByRole('button', { name: /Vào trận/ }));
     expect(loadSave()?.battle.seed).not.toBe(1);
   });
 
@@ -90,6 +92,54 @@ describe('home and navigation', () => {
     expect(screen.getByText(/lượt đầu tiên của bạn chỉ có 2 Năng lượng/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Trang chủ' }));
     expect(screen.getByRole('button', { name: 'Bắt đầu' })).toBeInTheDocument();
+  });
+});
+
+describe('setup screen (Milestone 3)', () => {
+  function allPlayerCards() {
+    const c = loadSave()!.battle.combatants.player;
+    return [...c.deck, ...c.hand, ...c.discard].map((x) => x.definitionId);
+  }
+
+  it('starts with the chosen opponent and deck, and remembers the choice', () => {
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }));
+    fireEvent.click(screen.getByRole('radio', { name: /Hỏa Ấn Sư/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Phòng ngự/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Vào trận/ }));
+
+    expect(screen.getByRole('heading', { name: 'Hỏa Ấn Sư · Thiêu đốt' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bạn · Bộ Phòng ngự' })).toBeInTheDocument();
+    const save = loadSave()!;
+    expect(save.setup).toEqual({ playerDeckId: 'fortress', opponentId: 'pyromancer' });
+    expect(allPlayerCards().filter((id) => id === 'shield_bash')).toHaveLength(7);
+    const bot = save.battle.combatants.bot;
+    expect([...bot.deck, ...bot.hand, ...bot.discard].filter((c) => c.definitionId === 'ember')).toHaveLength(3);
+
+    // Home shows the opponent on the resume button; setup preselects the last choice.
+    fireEvent.click(screen.getByRole('button', { name: 'Trang chủ' }));
+    expect(screen.getByRole('button', { name: /Tiếp tục trận/ })).toHaveTextContent('Hỏa Ấn Sư');
+    fireEvent.click(screen.getByRole('button', { name: 'Trận mới' }));
+    expect(screen.getByRole('radio', { name: /Hỏa Ấn Sư/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /^Phòng ngự/ })).toBeChecked();
+  });
+
+  it('restart keeps the same setup', () => {
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }));
+    fireEvent.click(screen.getByRole('radio', { name: /Hộ Vệ Đá/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Vào trận/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ván mới' }));
+    expect(screen.getByRole('heading', { name: 'Hộ Vệ Đá · Phòng ngự' })).toBeInTheDocument();
+    expect(loadSave()!.setup.opponentId).toBe('golem');
+  });
+
+  it('an old save without setup resumes with the default opponent', () => {
+    const state = createBattle(3).state;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ schema: 1, savedAt: '', battle: state, stats: emptyStats() }));
+    renderApp();
+    fireEvent.click(screen.getByRole('button', { name: /Tiếp tục trận/ }));
+    expect(screen.getByRole('heading', { name: 'Người Gác Ấn · Cân bằng' })).toBeInTheDocument();
   });
 });
 

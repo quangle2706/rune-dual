@@ -12,7 +12,9 @@
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { applyBotStep } from '../bot/runner';
 import type { BotDecision } from '../bot/decide';
-import { createBattle, endTurn, playCard } from '../engine/battle';
+import { getOpponent } from '../content/opponents';
+import { DEFAULT_SETUP, decksForSetup, type BattleSetup } from '../content/setup';
+import { DEFAULT_RULES, createBattle, endTurn, playCard } from '../engine/battle';
 import type { BattleEvent, BattleState, CommandResult } from '../engine/types';
 import { emptyStats, type MatchStats } from '../persistence/save';
 
@@ -30,6 +32,8 @@ export interface UiState {
   lastBotDecision: BotDecision | null;
   /** Presentation-only totals for the result screen (the event log is bounded). */
   stats: MatchStats;
+  /** Chosen decks and opponent; kept for restarts and saves. */
+  setup: BattleSetup;
 }
 
 export type UiAction =
@@ -40,8 +44,8 @@ export type UiAction =
   | { type: 'restart'; seed: number }
   | { type: 'dismissNotice' };
 
-export function initUiState(seed: number, battleId = 1): UiState {
-  const { state, events } = createBattle(seed);
+export function initUiState(seed: number, battleId = 1, setup: BattleSetup = DEFAULT_SETUP): UiState {
+  const { state, events } = createBattle(seed, DEFAULT_RULES, decksForSetup(setup));
   return {
     battleId,
     version: 0,
@@ -52,11 +56,16 @@ export function initUiState(seed: number, battleId = 1): UiState {
     botActionsThisTurn: 0,
     lastBotDecision: null,
     stats: emptyStats(),
+    setup: { ...setup },
   };
 }
 
 /** Resumes a saved battle. No events are replayed, so nothing animates or sounds on load. */
-export function resumeUiState(battle: BattleState, stats: MatchStats = emptyStats()): UiState {
+export function resumeUiState(
+  battle: BattleState,
+  stats: MatchStats = emptyStats(),
+  setup: BattleSetup = DEFAULT_SETUP,
+): UiState {
   return {
     battleId: 1,
     version: 0,
@@ -67,6 +76,7 @@ export function resumeUiState(battle: BattleState, stats: MatchStats = emptyStat
     botActionsThisTurn: 0,
     lastBotDecision: null,
     stats,
+    setup: { ...setup },
   };
 }
 
@@ -110,7 +120,7 @@ export function uiReducer(ui: UiState, action: UiAction): UiState {
     }
     case 'botStep': {
       if (action.battleId !== ui.battleId || action.version !== ui.version) return ui; // stale timer
-      const step = applyBotStep(ui.battle, 'bot', ui.botActionsThisTurn);
+      const step = applyBotStep(ui.battle, 'bot', ui.botActionsThisTurn, getOpponent(ui.setup.opponentId).profile);
       if (!step || !step.result.ok) return ui;
       return {
         ...applied(ui, step.result),
@@ -119,7 +129,7 @@ export function uiReducer(ui: UiState, action: UiAction): UiState {
       };
     }
     case 'restart':
-      return initUiState(action.seed, ui.battleId + 1);
+      return initUiState(action.seed, ui.battleId + 1, ui.setup);
   }
 }
 
@@ -143,8 +153,10 @@ function usePageHidden(): boolean {
 export interface ControllerOptions {
   initialSeed?: number;
   seedSource?: () => number;
+  /** Decks and opponent for a new battle (default: balanced vs Người Gác Ấn). */
+  setup?: BattleSetup;
   /** Resume this battle instead of creating a new one. */
-  resume?: { battle: BattleState; stats: MatchStats };
+  resume?: { battle: BattleState; stats: MatchStats; setup: BattleSetup };
   /** Delay before the bot's first action of a turn (ms). */
   botThinkDelay?: number;
   /** Delay between subsequent bot actions (ms). */
@@ -159,11 +171,14 @@ export function useBattleController(options: ControllerOptions = {}) {
     initialSeed,
     seedSource = makeSeed,
     resume,
+    setup,
     botThinkDelay = DEFAULT_BOT_THINK_DELAY,
     botStepDelay = DEFAULT_BOT_STEP_DELAY,
   } = options;
   const [ui, dispatch] = useReducer(uiReducer, undefined, () =>
-    resume ? resumeUiState(resume.battle, resume.stats) : initUiState(initialSeed ?? seedSource()),
+    resume
+      ? resumeUiState(resume.battle, resume.stats, resume.setup)
+      : initUiState(initialSeed ?? seedSource(), 1, setup ?? DEFAULT_SETUP),
   );
   const pageHidden = usePageHidden();
 

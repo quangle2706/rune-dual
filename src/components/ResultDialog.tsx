@@ -5,6 +5,9 @@ import type { MatchStats } from '../persistence/save';
 
 interface Props {
   winner: Exclude<Winner, null>;
+  opponentName: string;
+  /** Shown after a defeat. */
+  tip?: string;
   turns: number;
   stats: MatchStats;
   onRestart: () => void;
@@ -14,14 +17,15 @@ interface Props {
 }
 
 const COPY = {
-  player: { title: 'Chiến thắng!', sub: 'Bạn đã hạ gục Người Gác Ấn.', Icon: Trophy },
+  player: { title: 'Chiến thắng!', sub: 'Bạn đã hạ gục {name}.', Icon: Trophy },
   bot: { title: 'Thất bại', sub: 'Máu của bạn đã cạn. Thử lại nhé!', Icon: Skull },
   draw: { title: 'Hòa', sub: 'Cả hai cùng gục ngã.', Icon: Handshake },
 } as const;
 
 /** Victory / Defeat / Draw screen, shown over the board. "Xem bàn đấu" closes it to review the log. */
-export function ResultDialog({ winner, turns, stats, onRestart, onHome, onReview }: Props) {
-  const { title, sub, Icon } = COPY[winner];
+export function ResultDialog({ winner, opponentName, tip, turns, stats, onRestart, onHome, onReview }: Props) {
+  const { title, Icon } = COPY[winner];
+  const sub = COPY[winner].sub.replace('{name}', opponentName);
   const primaryRef = useRef<HTMLButtonElement>(null);
   useEffect(() => primaryRef.current?.focus(), []);
 
@@ -63,6 +67,11 @@ export function ResultDialog({ winner, turns, stats, onRestart, onHome, onReview
           </tbody>
         </table>
         <p className="muted">Trận kéo dài {turns} lượt.</p>
+        {winner === 'bot' && tip && (
+          <p className="result__tip">
+            <strong>Mẹo:</strong> {tip}
+          </p>
+        )}
         <div className="result__actions">
           <button ref={primaryRef} type="button" className="btn btn--gold" onClick={onRestart}>
             <RotateCcw size={18} aria-hidden="true" /> Chơi ván mới

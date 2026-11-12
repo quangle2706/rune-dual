@@ -2,6 +2,7 @@
  * Battle save/resume. One save slot, versioned. Anything that fails validation
  * is discarded rather than loaded.
  */
+import { DEFAULT_SETUP, sanitizeSetup, type BattleSetup } from '../content/setup';
 import { isBattleState } from '../engine/validate';
 import type { BattleState } from '../engine/types';
 import { browserStore, readJson, type KeyValueStore } from './storage';
@@ -29,6 +30,8 @@ export interface SaveFile {
   savedAt: string;
   battle: BattleState;
   stats: MatchStats;
+  /** Added in Milestone 3; older saves default to the starter setup. */
+  setup: BattleSetup;
 }
 
 function isSide2(v: unknown): v is { player: number; bot: number } {
@@ -43,8 +46,13 @@ function isStats(v: unknown): v is MatchStats {
   return isSide2(r.damageDealt) && isSide2(r.cardsPlayed) && isSide2(r.healed);
 }
 
-export function saveBattle(battle: BattleState, stats: MatchStats, store: KeyValueStore = browserStore): boolean {
-  const file: SaveFile = { schema: SAVE_SCHEMA, savedAt: new Date().toISOString(), battle, stats };
+export function saveBattle(
+  battle: BattleState,
+  stats: MatchStats,
+  store: KeyValueStore = browserStore,
+  setup: BattleSetup = DEFAULT_SETUP,
+): boolean {
+  const file: SaveFile = { schema: SAVE_SCHEMA, savedAt: new Date().toISOString(), battle, stats, setup };
   return store.set(SAVE_KEY, JSON.stringify(file));
 }
 
@@ -66,6 +74,7 @@ export function loadSave(store: KeyValueStore = browserStore): SaveFile | null {
     savedAt: typeof file.savedAt === 'string' ? file.savedAt : '',
     battle: file.battle,
     stats: isStats(file.stats) ? file.stats : emptyStats(),
+    setup: sanitizeSetup(file.setup),
   };
 }
 

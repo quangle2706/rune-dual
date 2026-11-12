@@ -3,9 +3,20 @@
  * Both seats use the same heuristic bot (src/bot), so results measure the rules
  * and cards under that bot's play style — not under human play.
  */
+import { DEFAULT_BOT_PROFILE, type BotProfile } from '../bot/decide';
 import { runBotTurn } from '../bot/runner';
-import { createBattle } from '../engine/battle';
-import type { BattleRules, BattleState } from '../engine/types';
+import { getDeck } from '../content/decks';
+import { OPPONENTS, profileForDeck } from '../content/opponents';
+import { STARTER_DECKS, createBattle, type BattleDecks } from '../engine/battle';
+import type { BattleRules, BattleState, Side } from '../engine/types';
+
+export interface SimulationSetup {
+  rules?: BattleRules;
+  decks?: BattleDecks;
+  profiles?: Record<Side, Readonly<BotProfile>>;
+}
+
+const DEFAULT_PROFILES: Record<Side, Readonly<BotProfile>> = { player: DEFAULT_BOT_PROFILE, bot: DEFAULT_BOT_PROFILE };
 
 export interface SimulationResult {
   games: number;
@@ -22,16 +33,19 @@ export interface SimulationResult {
   cardPlays: Record<string, number>;
 }
 
-export function simulateBattle(seed: number, rules?: BattleRules, turnCap = 200): BattleState {
-  let state = createBattle(seed, rules).state;
+export function simulateBattle(seed: number, setup: SimulationSetup = {}, turnCap = 200): BattleState {
+  const profiles = setup.profiles ?? DEFAULT_PROFILES;
+  let state = createBattle(seed, setup.rules, setup.decks ?? STARTER_DECKS).state;
   while (state.winner === null && state.turnNumber < turnCap) {
-    state = runBotTurn(state, state.activeSide).state;
+    state = runBotTurn(state, state.activeSide, profiles[state.activeSide]).state;
   }
   return state;
 }
 
-export function simulate(options: { rules?: BattleRules; seeds: number[]; turnCap?: number }): SimulationResult {
+export function simulate(options: SimulationSetup & { seeds: number[]; turnCap?: number }): SimulationResult {
   const { rules, seeds, turnCap = 200 } = options;
+  const decks = options.decks ?? STARTER_DECKS;
+  const profiles = options.profiles ?? DEFAULT_PROFILES;
   const result: SimulationResult = {
     games: seeds.length,
     firstSeatWins: 0,
@@ -46,9 +60,9 @@ export function simulate(options: { rules?: BattleRules; seeds: number[]; turnCa
   let totalTurns = 0;
   for (const seed of seeds) {
     // The bounded log only keeps recent events, so count plays turn by turn.
-    let state = createBattle(seed, rules).state;
+    let state = createBattle(seed, rules, decks).state;
     while (state.winner === null && state.turnNumber < turnCap) {
-      const turn = runBotTurn(state, state.activeSide);
+      const turn = runBotTurn(state, state.activeSide, profiles[state.activeSide]);
       for (const e of turn.events) {
         if (e.type === 'cardPlayed') result.cardPlays[e.definitionId] = (result.cardPlays[e.definitionId] ?? 0) + 1;
       }
@@ -69,4 +83,41 @@ export function simulate(options: { rules?: BattleRules; seeds: number[]; turnCa
 
 export function seedRange(count: number, start = 1): number[] {
   return Array.from({ length: count }, (_, i) => start + i);
+}
+
+export interface MatchupResult {
+  playerDeckId: string;
+  opponentId: string;
+  /** Win rate of the player's seat (who also moves first). */
+  playerWinRate: number;
+  averageTurns: number;
+  maxTurns: number;
+  unfinished: number;
+}
+
+/**
+ * Every player deck against every opponent archetype. The player's seat is
+ * played by the bot using the profile that matches the player's deck.
+ */
+export function simulateMatchups(options: { rules?: BattleRules; seeds: number[]; playerDeckIds: string[] }): MatchupResult[] {
+  const out: MatchupResult[] = [];
+  for (const playerDeckId of options.playerDeckIds) {
+    for (const opponent of OPPONENTS) {
+      const r = simulate({
+        rules: options.rules,
+        seeds: options.seeds,
+        decks: { player: getDeck(playerDeckId).recipe, bot: getDeck(opponent.deckId).recipe },
+        profiles: { player: profileForDeck(playerDeckId), bot: opponent.profile },
+      });
+      out.push({
+        playerDeckId,
+        opponentId: opponent.id,
+        playerWinRate: r.firstSeatWinRate,
+        averageTurns: r.averageTurns,
+        maxTurns: r.maxTurns,
+        unfinished: r.unfinished,
+      });
+    }
+  }
+  return out;
 }

@@ -1,6 +1,7 @@
 /**
  * Balance review: compares rule variants with bot-vs-bot simulations.
  * Usage: npm run simulate [-- <games>]
+ * For deck/opponent matchups see scripts/matchups.ts (npm run simulate:matchups).
  */
 import { BASE_RULES, DEFAULT_RULES } from '../src/engine/battle';
 import type { BattleRules } from '../src/engine/types';

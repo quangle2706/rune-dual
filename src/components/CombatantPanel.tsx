@@ -1,4 +1,4 @@
-import { Archive, Bot, Flame, Heart, Layers, Shield, User, Zap } from 'lucide-react';
+import { Archive, Bot, Flame, Heart, Layers, Shield, User, Zap, type LucideIcon } from 'lucide-react';
 import type { BattleEvent, Combatant, Side } from '../engine/types';
 import { SIDE_NAMES, TERMS } from '../content/text';
 
@@ -35,15 +35,28 @@ interface Props {
   latestAction?: string | null;
   showEnergy?: boolean;
   energyPerTurn?: number;
+  /** Display name (defaults: "Bạn" / "Đối thủ"). */
+  name?: string;
+  portrait?: LucideIcon;
 }
 
-export function CombatantPanel({ side, combatant, active, events, latestAction, showEnergy, energyPerTurn = 3 }: Props) {
+export function CombatantPanel({
+  side,
+  combatant,
+  active,
+  events,
+  latestAction,
+  showEnergy,
+  energyPerTurn = 3,
+  name: displayName,
+  portrait,
+}: Props) {
   const c = combatant;
   const pct = Math.round((c.hp / c.maxHp) * 100);
   const chips = chipsFor(side, events);
   const hit = chips.some((ch) => ch.kind === 'damage' || ch.kind === 'burn');
-  const Portrait = side === 'bot' ? Bot : User;
-  const name = side === 'bot' ? 'Đối thủ — Người Gác Ấn' : 'Bạn';
+  const Portrait = portrait ?? (side === 'bot' ? Bot : User);
+  const name = displayName ?? (side === 'bot' ? 'Đối thủ' : 'Bạn');
 
   return (
     <section

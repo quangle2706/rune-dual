@@ -1,6 +1,6 @@
 /**
  * Pure battle engine. Public commands:
- *   createBattle(seed, rules?)            -> { state, events }
+ *   createBattle(seed, rules?, decks?)    -> { state, events }
  *   playCard(state, side, instanceId)     -> CommandResult
  *   endTurn(state, side)                  -> CommandResult
  *
@@ -13,7 +13,7 @@
  *   remaining effects are skipped.
  */
 import { findCardDefinition, getCardDefinition } from '../content/cards';
-import { buildStarterDeck } from '../content/decks';
+import { STARTER_DECK_RECIPE, buildDeck, type DeckRecipe } from '../content/decks';
 import { REJECTION_MESSAGES } from '../content/text';
 import { normalizeSeed, shuffle } from './rng';
 import type {
@@ -200,15 +200,23 @@ function startTurn(ctx: Ctx, side: Side): void {
 }
 
 /** Creates a new battle and starts the player's first turn. */
+export interface BattleDecks {
+  player: DeckRecipe;
+  bot: DeckRecipe;
+}
+
+export const STARTER_DECKS: Readonly<BattleDecks> = { player: STARTER_DECK_RECIPE, bot: STARTER_DECK_RECIPE };
+
 export function createBattle(
   seed: number,
   rules: Readonly<BattleRules> = DEFAULT_RULES,
+  decks: Readonly<BattleDecks> = STARTER_DECKS,
 ): { state: BattleState; events: BattleEvent[] } {
   const normalized = normalizeSeed(seed);
   let rng = normalized;
-  const playerShuffle = shuffle(buildStarterDeck('player'), rng);
+  const playerShuffle = shuffle(buildDeck('player', decks.player), rng);
   rng = playerShuffle.nextState;
-  const botShuffle = shuffle(buildStarterDeck('bot'), rng);
+  const botShuffle = shuffle(buildDeck('bot', decks.bot), rng);
   rng = botShuffle.nextState;
 
   const state: BattleState = {

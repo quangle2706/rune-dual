@@ -38,3 +38,16 @@ Thiêu đốt (flame, orange), Hỗ trợ (sparkles, purple).
 4. Update the expected text in `tests/cardText.test.ts`.
 5. If you need a new effect type: extend the `Effect` union, `resolveEffect`, `describeEffect`,
    and `scoreCard` (TypeScript's exhaustive switches will point at every place).
+
+## Decks (Milestone 3)
+
+Source: `src/content/decks.ts`. Each deck has exactly 20 cards from the 12 above.
+The player chooses one on the setup screen; each opponent uses one.
+
+| Deck | Recipe | Used by opponent |
+|---|---|---|
+| Cân bằng | 5 Chém, 5 Phòng thủ, 1 of each other card | Người Gác Ấn |
+| Thiêu đốt | 4 Chém, 4 Phòng thủ, 3 Tàn lửa, 3 Chém nhanh, 2 Sáng suốt, 1 Trọng kích, 1 Liều lĩnh, 1 Thanh tẩy, 1 Hồi phục | Hỏa Ấn Sư |
+| Phòng ngự | 7 Khiên kích, 5 Chém, 3 Trọng kích, 2 Củng cố, 2 Thanh tẩy, 1 Hồi phục | Hộ Vệ Đá |
+
+Win rates per matchup are in BALANCE.md.

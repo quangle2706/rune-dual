@@ -1,4 +1,6 @@
-# Balance Review (Milestone 2)
+# Balance Review
+
+# Milestone 2: Seat Advantage
 
 ## Method
 
@@ -74,3 +76,54 @@ Counts mostly follow deck copies (5 strike, 5 guard). Observations for future ca
 - Bot-vs-bot only; human win rates will differ.
 - One deck for both sides; new archetypes (Milestone 3) need a new review.
 - Re-run `npm run simulate` after any card or rule change.
+
+---
+
+# Milestone 3: Archetypes and Matchups
+
+Tool: `npm run simulate:matchups [-- <games>]` (`scripts/matchups.ts`). Every player deck
+plays every opponent archetype, bot vs bot. The player's seat is played by the bot using the
+profile that matches the player's deck. The player always moves first (DEFAULT_RULES).
+
+## Bot change: adaptive incoming-damage estimate
+
+The first matchup run exposed a stalemate: Fortress vs Fortress hit the 200-turn cap in
+almost every game (398 unfinished out of 3600). Both bots assumed a fixed 10 incoming damage,
+so they kept blocking against an opponent that was also only blocking. A human could exploit
+the same flaw.
+
+Fix (`estimateIncomingDamage` in `src/bot/decide.ts`): estimate = 0.4 × profile prior +
+0.6 × the pre-block damage the opponent actually dealt per turn over its last 3 turns
+(public battle history only). With no history yet, the prior is used.
+After the change: 0 unfinished games, longest game 34 turns. The standard mirror
+(Cân bằng vs Người Gác Ấn) moved from 47.7% to 46.6% for the first seat.
+
+## Tuning iterations (summary)
+
+| Change | Effect |
+|---|---|
+| Burn deck with 4 Tàn lửa | Games ended in ~5 turns; Burn stacks deal b + (b−1) + … total damage |
+| → 3 Tàn lửa, Pyromancer profile softened (only burnWeight 1.3) | Still fast (5.5–6.5 turns) but within 45–55% |
+| Fortress deck built on Phòng thủ/Củng cố | Stalled or lost badly (7–25% as player) |
+| → 7 Khiên kích, 5 Chém, 3 Trọng kích, 2 Củng cố, 2 Thanh tẩy, 1 Hồi phục | Fair as an opponent (players win ~50–53%) |
+
+## Final matrix (1000 games per cell; player win rate, average turns)
+
+| Player deck \ Opponent | Người Gác Ấn (Cân bằng) | Hỏa Ấn Sư (Thiêu đốt) | Hộ Vệ Đá (Phòng ngự) |
+|---|---|---|---|
+| Cân bằng | 46.6% (8.6t) | 45.5% (6.4t) | 50.1% (9.9t) |
+| Thiêu đốt | 55.1% (6.2t) | 54.9% (5.5t) | 52.5% (6.6t) |
+| Phòng ngự | 32.7% (9.5t) | 38.5% (7.2t) | 35.4% (10.8t) |
+
+Unfinished games: 0. Longest game: 34 turns.
+
+## Reading the matrix
+
+- **Opponents are close to fair**: with the Cân bằng or Thiêu đốt deck, every opponent sits
+  between 45% and 55% for the player.
+- **Thiêu đốt is the strongest player deck** (52–55%) and makes the shortest games.
+- **Phòng ngự is the weakest player deck** (33–39%) when the heuristic bot pilots it.
+  Block only matters during the opponent's turn and the bot can't plan around that well.
+  A human may do better; unmeasured. The setup screen labels it as harder.
+  Possible future fixes: a new card that rewards holding block (e.g. damage equal to current
+  block), or block that partly persists.

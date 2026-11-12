@@ -1,21 +1,32 @@
 import { useCallback, useEffect, useState } from 'react';
 import { soundPlayer } from './audio/sound';
+import { getOpponent } from './content/opponents';
+import type { BattleSetup } from './content/setup';
 import type { ControllerOptions } from './hooks/useBattleController';
 import { clearSave, loadSave, type SaveFile } from './persistence/save';
 import { BattleScreen } from './screens/BattleScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { RulesScreen } from './screens/RulesScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { BOT_DELAYS, loadSettings, saveSettings, type Settings } from './settings/settings';
+import { SetupScreen } from './screens/SetupScreen';
+import {
+  BOT_DELAYS,
+  loadLastSetup,
+  loadSettings,
+  saveLastSetup,
+  saveSettings,
+  type Settings,
+} from './settings/settings';
 
-export type Screen = 'home' | 'battle' | 'rules' | 'settings';
+export type Screen = 'home' | 'setup' | 'battle' | 'rules' | 'settings';
 
-export interface AppProps extends Pick<ControllerOptions, 'initialSeed' | 'seedSource' | 'botThinkDelay' | 'botStepDelay'> {
+export interface AppProps
+  extends Pick<ControllerOptions, 'initialSeed' | 'seedSource' | 'botThinkDelay' | 'botStepDelay'> {
   initialScreen?: Screen;
 }
 
 /**
- * Screen navigation via plain state (no router needed for four screens).
+ * Screen navigation via plain state (no router needed for five screens).
  * Each new battle (or resume) remounts BattleScreen through `battleKey`, so
  * no timers or state leak between battles.
  */
@@ -24,6 +35,7 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [save, setSave] = useState<SaveFile | null>(() => loadSave());
   const [resume, setResume] = useState<SaveFile | null>(null);
+  const [setup, setSetup] = useState<BattleSetup>(() => loadLastSetup());
   const [battleKey, setBattleKey] = useState(0);
 
   // Apply settings to presentation systems.
@@ -44,8 +56,10 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
     setScreen('home');
   }, []);
 
-  const startNew = useCallback(() => {
+  const startNew = useCallback((chosen: BattleSetup) => {
     clearSave();
+    saveLastSetup(chosen);
+    setSetup(chosen);
     setResume(null);
     setBattleKey((k) => k + 1);
     setScreen('battle');
@@ -70,13 +84,17 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
         <BattleScreen
           key={battleKey}
           onExit={goHome}
+          // Tests pass a fixed seed for the first battle only.
           initialSeed={battleKey <= 1 ? initialSeed : undefined}
           seedSource={seedSource}
-          resume={resume ? { battle: resume.battle, stats: resume.stats } : undefined}
+          setup={setup}
+          resume={resume ? { battle: resume.battle, stats: resume.stats, setup: resume.setup } : undefined}
           botThinkDelay={botThinkDelay ?? think}
           botStepDelay={botStepDelay ?? step}
         />
       );
+    case 'setup':
+      return <SetupScreen initial={setup} onStart={startNew} onBack={goHome} />;
     case 'rules':
       return <RulesScreen onBack={goHome} />;
     case 'settings':
@@ -96,8 +114,8 @@ export function App({ initialScreen = 'home', initialSeed, seedSource, botThinkD
       return (
         <HomeScreen
           canResume={save !== null}
-          resumeTurn={save?.battle.turnNumber ?? null}
-          onStart={startNew}
+          resumeLabel={save ? `Lượt ${save.battle.turnNumber} · ${getOpponent(save.setup.opponentId).name}` : null}
+          onStart={() => setScreen('setup')}
           onResume={resumeSaved}
           onRules={() => setScreen('rules')}
           onSettings={() => setScreen('settings')}

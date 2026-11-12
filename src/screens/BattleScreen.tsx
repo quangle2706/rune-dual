@@ -8,6 +8,9 @@ import { ResultDialog } from '../components/ResultDialog';
 import { soundPlayer, soundsForEvents } from '../audio/sound';
 import { clearSave, saveBattle } from '../persistence/save';
 import { getCardDefinition } from '../content/cards';
+import { getDeck } from '../content/decks';
+import { getOpponent } from '../content/opponents';
+import { OPPONENT_PORTRAITS } from '../components/icons';
 import { REJECTION_MESSAGES, describeCard, keywordHints } from '../content/text';
 import { getEndTurnRejection, getPlayRejection } from '../engine/battle';
 import type { BattleEvent, BattleState } from '../engine/types';
@@ -30,13 +33,23 @@ function latestPlayed(log: readonly BattleEvent[]) {
   return null;
 }
 
-function PhaseBanner({ battle, paused, onRestart }: { battle: BattleState; paused: boolean; onRestart: () => void }) {
+function PhaseBanner({
+  battle,
+  paused,
+  onRestart,
+  opponentName,
+}: {
+  battle: BattleState;
+  paused: boolean;
+  onRestart: () => void;
+  opponentName: string;
+}) {
   if (battle.phase === 'GAME_OVER') {
     const w = battle.winner;
     const Icon = w === 'player' ? Trophy : w === 'bot' ? Skull : Handshake;
     const title = w === 'player' ? 'Chiến thắng!' : w === 'bot' ? 'Thất bại' : 'Hòa';
     const sub =
-      w === 'player' ? 'Bạn đã hạ gục Người Gác Ấn.' : w === 'bot' ? 'Máu của bạn đã cạn.' : 'Cả hai cùng gục ngã.';
+      w === 'player' ? `Bạn đã hạ gục ${opponentName}.` : w === 'bot' ? 'Máu của bạn đã cạn.' : 'Cả hai cùng gục ngã.';
     return (
       <div className={`banner banner--over banner--${w}`} role="status">
         <Icon size={32} aria-hidden="true" />
@@ -95,6 +108,8 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
   const [reviewingBattleId, setReviewingBattleId] = useState<number | null>(null);
   const lastSoundedEventId = useRef(0);
   const { battle } = ui;
+  const opponent = getOpponent(ui.setup.opponentId);
+  const playerDeck = getDeck(ui.setup.playerDeckId);
   const player = battle.combatants.player;
   const playerTurn = battle.phase === 'PLAYER_ACTION';
 
@@ -109,8 +124,8 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
   useEffect(() => {
     if (!persist) return;
     if (ui.battle.phase === 'GAME_OVER') clearSave();
-    else saveBattle(ui.battle, ui.stats);
-  }, [persist, ui.battle, ui.stats]);
+    else saveBattle(ui.battle, ui.stats, undefined, ui.setup);
+  }, [persist, ui.battle, ui.stats, ui.setup]);
 
   // Sounds derived from the latest events. The ref (kept across StrictMode's
   // remount) ensures each event sounds at most once.
@@ -167,11 +182,13 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
           active={battle.activeSide === 'bot' && battle.phase !== 'GAME_OVER'}
           events={ui.lastEvents}
           latestAction={botAction}
+          name={`${opponent.name} · ${opponent.title}`}
+          portrait={OPPONENT_PORTRAITS[opponent.id]}
         />
 
         <section className="center" aria-label="Khu vực giữa trận">
           <div className="center__grid">
-            <PhaseBanner battle={battle} paused={pageHidden} onRestart={restart} />
+            <PhaseBanner battle={battle} paused={pageHidden} onRestart={restart} opponentName={opponent.name} />
             <section className="panel played" aria-label="Thẻ vừa dùng">
               <h2 className="panel__title">Thẻ vừa dùng</h2>
               {played ? (
@@ -198,6 +215,7 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
             events={ui.lastEvents}
             showEnergy
             energyPerTurn={battle.rules.energyPerTurn}
+            name={`Bạn · Bộ ${playerDeck.name}`}
           />
 
           <section ref={detailRef} className="panel detail" aria-labelledby="detail-title">
@@ -279,6 +297,8 @@ export function BattleScreen({ onExit, persist = true, ...controllerOptions }: B
       {showResult && (
         <ResultDialog
           winner={battle.winner!}
+          opponentName={opponent.name}
+          tip={opponent.tip}
           turns={battle.turnNumber}
           stats={ui.stats}
           onRestart={restart}

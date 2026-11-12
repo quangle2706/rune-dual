@@ -161,3 +161,51 @@ pointer or key press (browser autoplay policy). Where Web Audio is missing it's 
 All derived from state/events, never changing them: HP damage trail (a delayed "ghost" bar),
 turn banner entrance, "thinking" dots during the bot turn, played-card pop-in, result dialog.
 All are disabled by reduced motion.
+
+## Milestone 3 additions
+
+### Opponent archetypes
+
+`src/content/opponents.ts` defines three opponents. Each is a **deck id + `BotProfile`**;
+all share the same decision algorithm, so "personality" is data:
+
+| Opponent | Deck | Profile changes from default |
+|---|---|---|
+| Người Gác Ấn | Cân bằng | none |
+| Hỏa Ấn Sư | Thiêu đốt | burnWeight 1.3 |
+| Hộ Vệ Đá | Phòng ngự | healWeight 1.1, cleanses at Burn ≥ 2 |
+
+`BotProfile` (in `src/bot/decide.ts`) holds the estimate prior, the minimum useful score,
+the cleanse threshold, and multipliers for damage/block/heal/draw/burn scoring.
+`chooseBotAction(view, profile)`, `applyBotStep(..., profile)` and `runBotTurn(..., profile)`
+take it as an optional argument (default = Milestone 1/2 behavior).
+
+### Adaptive incoming-damage estimate
+
+`estimateIncomingDamage(view, profile)` reads the opponent's recent pre-block damage from
+`view.publicLog` (public history) and blends it with the profile's prior. This replaced the
+fixed estimate of 10 and removed bot-vs-bot stalemates (see BALANCE.md).
+
+### Decks and setup
+
+- `src/content/decks.ts`: `DeckDefinition { id, name, description, note?, recipe }`; three decks
+  of exactly 20 cards built from the existing 12 cards. `buildDeck(side, recipe)`.
+- `createBattle(seed, rules?, decks?)` takes one recipe per side (default: starter for both).
+  The engine doesn't know about archetypes. It only receives card instances.
+- `src/content/setup.ts`: `BattleSetup { playerDeckId, opponentId }`, `sanitizeSetup`,
+  `decksForSetup`.
+- `UiState.setup` keeps the choice, so "Ván mới" restarts with the same matchup and bot steps
+  use the opponent's profile.
+- Saves include `setup`; saves without it (Milestone 2) resume as the default matchup. The
+  last choice is remembered (`rune-duel/last-setup`) and preselected on the setup screen.
+
+### Screens
+
+Home → **Chuẩn bị trận** (choose opponent + deck; defaults allow a one-click start) → Battle.
+The battle shows the opponent's name, archetype and portrait; the result dialog names the
+opponent and shows that opponent's tip after a defeat.
+
+### Deployment
+
+Relative `base` in `vite.config.ts`, CI workflow, manual GitHub Pages workflow.
+See DEPLOYMENT.md.
