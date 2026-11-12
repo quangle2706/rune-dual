@@ -3,31 +3,29 @@
 ## Done
 
 - **Milestone 1**: playable match, pure engine, heuristic bot, tests, docs.
-- **Milestone 2**: Home / Rules / Settings screens, result screen with stats, validated auto
-  save & resume, synthesized sound, visual polish, simulation-driven opening-energy rule.
-- **Milestone 3**: three opponent archetypes (deck + bot profile), player deck selection on a
-  setup screen, adaptive bot damage estimate, matchup simulation, deployment preparation
-  (relative base path, CI workflow, manual GitHub Pages workflow, DEPLOYMENT.md).
+- **Milestone 2**: Home / Rules / Settings, result screen, validated save & resume, sound,
+  polish, opening-energy rule from simulations.
+- **Milestone 3**: three opponent archetypes, deck selection, adaptive bot estimate, matchup
+  simulation, deployment preparation.
+- **Milestone 4**: Lá chắn gai + rebalanced Phòng ngự (all matchups 45–55%), personal stats,
+  first-battle tutorial, SVG card scenes and portraits, optional music, installable/offline
+  app, Playwright browser tests in CI, automatic deploys from `main`.
 
 ## Known limitations
 
-- **Phòng ngự is the weakest player deck** in bot-vs-bot simulation (33–39%). Labeled in the UI.
-- **Balance is bot-vs-bot only**; human win rates are unmeasured.
+- **Balance is bot-vs-bot**; collect real results on the Thống kê page and compare.
 - **Bot**: greedy, no lookahead; archetypes differ only by weights and deck.
-- **No new card mechanics**: archetypes reuse the original 12 cards.
-- **One save slot**, browser-local. Resume mid-bot-turn restarts the bot's per-turn action cap.
+- **One save slot**, browser-local; stats are browser-local too (no accounts by design).
+- **Art** is original but simple (SVG shapes + icons); music is a short procedural loop.
+  Audio output was checked for errors, not listened to, in automated checks.
 - **Draw outcome** is implemented and unit-tested, but no card can produce one.
-- **Artwork** is placeholder (Lucide icons on CSS gradients); sound is basic synthesized tones.
-- Browser checks are manual (Chrome); no automated end-to-end suite yet.
-- The GitHub Pages workflow exists but has **not been run**. Publishing needs the repository
-  owner to enable Pages and trigger it (see DEPLOYMENT.md).
+- Service worker updates apply on the next visit after a deploy (network-first pages);
+  there is no in-app "new version available" prompt.
 
-## Ideas beyond the planned milestones
+## Ideas
 
-- New cards that give archetypes real identity, e.g. "damage equal to your block" for
-  Phòng ngự, or "deal damage equal to the target's Burn" for Thiêu đốt. Re-run
-  `npm run simulate:matchups` after each.
-- A Playwright smoke test in CI (start game, play a card, end turn, see the bot act).
-- Deck builder (explicitly out of scope for the MVP).
-- Simple lookahead for the bot (e.g. play draw cards first when energy remains).
-- Illustrated card art via the `CARD_ART` / `OPPONENT_PORTRAITS` maps.
+- Review real stats after ~20 games per matchup; retune with `npm run simulate:matchups`.
+- More cards with archetype identity (e.g. "damage equal to the target's Burn").
+- Bot difficulty levels (e.g. an easier bot that ignores lethal, a harder one with lookahead).
+- Deck builder (out of scope for the MVP).
+- Illustrated art via `CARD_ART`, `CardScene` and `OPPONENT_PORTRAITS`.

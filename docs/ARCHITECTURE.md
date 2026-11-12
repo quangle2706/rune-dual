@@ -209,3 +209,49 @@ opponent and shows that opponent's tip after a defeat.
 
 Relative `base` in `vite.config.ts`, CI workflow, manual GitHub Pages workflow.
 See DEPLOYMENT.md.
+
+## Milestone 4 additions
+
+### New effect type
+`damageFromBlock` (engine `resolveEffect`, text `describeEffect`, bot `scoreCard` and
+`totalDamage(def, selfBlock)`). TypeScript's exhaustive switches pointed at every place to update.
+The lethal search uses the bot's current block for this effect (it ignores block gained by
+other cards in the same subset, so it under-estimates and never claims a false lethal).
+
+### Opponent-only decks
+`DeckDefinition.playerSelectable = false` hides a deck from the setup screen
+(`PLAYER_DECKS`). `profileForDeck` maps player decks to the matching opponent's play style
+for simulations.
+
+### Personal stats
+`persistence/records.ts` stores wins/losses/draws per `deck|opponent` in localStorage.
+`BattleScreen` records a finished battle in an effect; a token
+(`seed:turnNumber:nextEventId`) is kept in a short "recent" list so StrictMode remounts or
+re-renders never count a battle twice. `StatsScreen` shows totals and per-matchup rows.
+
+### Tutorial
+`tutorialStep({ phase, turnNumber, hasSelection, playerCardsPlayed })` is a pure function
+(select → play → end → bot → done). `TutorialPanel` is a non-blocking `role="status"` panel;
+the current target (hand, Dùng thẻ, Kết thúc lượt) gets a highlight class. Shown while
+`settings.tutorialDone` is false; skippable; "Xem lại hướng dẫn" in Settings resets it.
+
+### Art and music
+- `CardScene`: original SVG background per category (slashes, hex lattice, motes, embers,
+  rune circle) behind the card's emblem icon. `useId` keeps gradient ids unique.
+- `Portraits.tsx`: original SVG portraits (`OPPONENT_PORTRAITS`, `PlayerPortrait`).
+- `audio/context.ts`: one shared AudioContext. `audio/music.ts`: `MusicPlayer` schedules
+  soft A-minor pads and a fixed pentatonic pattern a little ahead of time; fades in/out;
+  only on the battle screen, only when enabled and the tab is visible. Off by default.
+
+### Installable / offline (PWA)
+`public/manifest.webmanifest`, PNG icons in `public/icons/` (rendered by
+`scripts/make-icons.ts` with Playwright + Chrome), and `public/sw.js`:
+network-first for page navigations (new deploys appear), cache-first for hashed assets,
+fonts and icons; old `rune-duel-*` caches deleted on activate; asset cache trimmed to 80
+entries. Registered only in production builds (`import.meta.env.PROD`).
+
+### Browser tests and delivery
+`playwright.config.ts` serves the production build with `vite preview --base /rune-dual/`
+(same path as GitHub Pages) and runs `e2e/smoke.spec.ts` in desktop and Pixel 7 projects
+using the installed Chrome. CI runs them on branches/PRs; `deploy-pages.yml` runs
+typecheck → unit tests → build → e2e on every push to `main` and deploys only if all pass.

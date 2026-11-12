@@ -17,6 +17,7 @@ Source of truth: `src/content/cards.ts`. Text below is the exact generated card 
 | 10 | `twin_strike` | Song kích | 2 | Tấn công | damage 4 ×2 hits | Gây 4 sát thương 2 lần (mỗi lần là một đòn riêng). |
 | 11 | `cleanse` | Thanh tẩy | 1 | Hồi máu | removeBurn, heal 2 | Xóa toàn bộ Thiêu đốt trên bản thân, sau đó hồi 2 Máu. |
 | 12 | `desperate_blow` | Liều lĩnh | 1 | Tấn công | loseHp 2, damage 10 | Mất 2 Máu (bỏ qua Giáp), sau đó gây 10 sát thương. Nếu bạn gục vì mất máu, các hiệu ứng sau không xảy ra. |
+| 13 | `thorn_shield` | Lá chắn gai | 1 | Phòng thủ | block 2, damageFromBlock | Nhận 2 Giáp, sau đó gây sát thương bằng số Giáp bạn đang có. |
 
 Category is shown as a text label + icon on every card (not color alone):
 Tấn công (sword, red), Phòng thủ (shield, blue), Hồi máu (heart, green),
@@ -41,13 +42,14 @@ Thiêu đốt (flame, orange), Hỗ trợ (sparkles, purple).
 
 ## Decks (Milestone 3)
 
-Source: `src/content/decks.ts`. Each deck has exactly 20 cards from the 12 above.
+Source: `src/content/decks.ts`. Each deck has exactly 20 cards.
 The player chooses one on the setup screen; each opponent uses one.
 
 | Deck | Recipe | Used by opponent |
 |---|---|---|
-| Cân bằng | 5 Chém, 5 Phòng thủ, 1 of each other card | Người Gác Ấn |
+| Cân bằng | 5 Chém, 5 Phòng thủ, 1 of each other original card (no Lá chắn gai) | Người Gác Ấn |
 | Thiêu đốt | 4 Chém, 4 Phòng thủ, 3 Tàn lửa, 3 Chém nhanh, 2 Sáng suốt, 1 Trọng kích, 1 Liều lĩnh, 1 Thanh tẩy, 1 Hồi phục | Hỏa Ấn Sư |
-| Phòng ngự | 7 Khiên kích, 5 Chém, 3 Trọng kích, 2 Củng cố, 2 Thanh tẩy, 1 Hồi phục | Hộ Vệ Đá |
+| Phòng ngự | 5 Khiên kích, 5 Chém, 3 Trọng kích, 2 Lá chắn gai, 2 Củng cố, 2 Thanh tẩy, 1 Hồi phục | (player only) |
+| Hộ Vệ Đá (opponent only) | 7 Khiên kích, 5 Chém, 3 Trọng kích, 2 Củng cố, 2 Thanh tẩy, 1 Hồi phục | Hộ Vệ Đá |
 
 Win rates per matchup are in BALANCE.md.

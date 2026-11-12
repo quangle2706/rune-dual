@@ -127,3 +127,41 @@ Unfinished games: 0. Longest game: 34 turns.
   A human may do better; unmeasured. The setup screen labels it as harder.
   Possible future fixes: a new card that rewards holding block (e.g. damage equal to current
   block), or block that partly persists.
+
+---
+
+# Milestone 4: Lá chắn gai and the Phòng ngự deck
+
+Problem: the player's Phòng ngự deck won only 33–39%. Block expires at your own turn start,
+so pure defense can't win damage races.
+
+New effect `damageFromBlock` and card **Lá chắn gai**: gain block, then deal damage equal to
+your current block. It rewards building block first (Phòng thủ / Khiên kích → Lá chắn gai).
+
+## Tuning (300 games per cell; Phòng ngự as player vs Người Gác Ấn / Hỏa Ấn Sư / Hộ Vệ Đá)
+
+| Version | Phòng ngự as player | Players vs Hộ Vệ Đá |
+|---|---|---|
+| No new card (Milestone 3) | 33% / 40% / 33% | 51% / 51% |
+| Cost 2, 4 block, ×3 | 15% / 16% / 36% | 72% / 71% |
+| Cost 1, 4 block, ×3 | 73% / 68% / 38% | 16% / 24% |
+| Cost 1, 2 block, ×3 | 58% / 53% / 39% | 27% / 32% |
+| **Cost 1, 2 block, ×2** | **47% / 52% / 31%** | 34% / 41% (too strong as opponent) |
+
+Cost is a very sharp lever: at cost 1, Phòng thủ + Phòng thủ + Lá chắn gai deals 14 damage for
+3 energy. Final card: **cost 1, 2 block**, two copies in the player's Phòng ngự deck.
+
+Defensive decks also play better from the second seat (4 energy on their first turn), so the
+new deck made Hộ Vệ Đá too hard as an opponent. Fix: Hộ Vệ Đá keeps its Milestone 3 deck as an
+opponent-only deck (`stoneguard`).
+
+## Final matrix (1000 games per cell)
+
+| Player deck \ Opponent | Người Gác Ấn | Hỏa Ấn Sư | Hộ Vệ Đá |
+|---|---|---|---|
+| Cân bằng | 46.6% (8.6t) | 45.5% (6.4t) | 50.1% (9.9t) |
+| Thiêu đốt | 55.1% (6.2t) | 54.9% (5.5t) | 52.5% (6.6t) |
+| Phòng ngự | 51.7% (8.8t) | 50.3% (6.7t) | 52.6% (9.6t) |
+
+All nine matchups are within 45–55%. Unfinished games: 0; longest game 34 turns.
+Real-player results can now be collected on the in-game **Thống kê** page.

@@ -95,3 +95,10 @@ no energy spent, no cards moved.
 
 `createBattle(seed)` + the same sequence of commands always yields an identical state.
 All randomness is mulberry32 with its state stored in `BattleState.rngState`.
+
+## Damage equal to block (Milestone 4)
+
+`damageFromBlock` (card Lá chắn gai) deals normal damage to the opponent equal to the
+user's block **at the moment it resolves**, i.e. after earlier effects on the same card.
+The user's block is not spent. The damage is then absorbed by the opponent's block like any
+normal damage.
