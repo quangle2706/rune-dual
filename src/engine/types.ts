@@ -68,7 +68,29 @@ export interface Combatant {
   discard: CardInstance[];
 }
 
+/**
+ * Tunable rule numbers. Stored in BattleState so a saved battle keeps the rules
+ * it was started with, and simulations can compare variants.
+ */
+export interface BattleRules {
+  maxHp: number;
+  energyPerTurn: number;
+  /** Turn-start draw fills the hand up to this many cards. */
+  turnDrawTarget: number;
+  handLimit: number;
+  /** Energy on the very first turn of the battle (the first player's turn 1). */
+  firstTurnEnergy: number;
+  /** Turn-start draw target on the very first turn of the battle. */
+  firstTurnDrawTarget: number;
+  /** Extra cards the second player draws on its first turn (battle turn 2). */
+  secondPlayerFirstTurnDrawBonus: number;
+  /** Extra energy the second player gets on its first turn (battle turn 2). */
+  secondPlayerFirstTurnEnergyBonus: number;
+}
+
 export interface BattleState {
+  /** Rules this battle was created with. */
+  rules: BattleRules;
   seed: number;
   /** Current mulberry32 state. Advances only when randomness is consumed. */
   rngState: number;

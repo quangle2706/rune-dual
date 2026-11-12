@@ -1,35 +1,29 @@
 # Next Steps
 
-## Known limitations (Milestone 1)
+## Done
 
-- **Balance**: bot-vs-bot simulation (500 seeds, same heuristic on both sides) gave
-  first player 431 wins, second player 69, 0 draws; average 9 turns, max 30.
-  Moving first is a big advantage (and the human always moves first). Candidate fixes:
-  second player draws 6 on its first turn, first player gets 2 energy on turn 1, or higher HP.
-- **Bot**: greedy heuristic, no lookahead; see ARCHITECTURE.md → "Bot limitations".
-- **Draw outcome** is implemented and unit-tested via `outcomeFor`, but no current card
-  can produce one in play.
+- **Milestone 1**: playable match, engine, bot, tests, docs.
+- **Milestone 2**: Home / Rules / Settings screens, result screen with stats, auto save &
+  resume (validated), synthesized sound, visual polish, simulation-driven balance fix
+  (see BALANCE.md).
+
+## Known limitations
+
+- **Balance is bot-vs-bot only.** First-seat win rate is 47.7% with the same heuristic on both
+  sides. Human-vs-bot win rate is unmeasured. Card-level observations (guard overplayed,
+  twin strike weaker than heavy strike, cleanse rarely useful) are recorded but not acted on.
+- **Bot**: greedy heuristic, no lookahead (see ARCHITECTURE.md → "Bot limitations").
+- **One save slot**, stored only in this browser. Clearing site data removes it.
+- **Resume mid-bot-turn** restarts the bot's per-turn action counter (safety cap) from 0.
+- **Draw outcome** is implemented and unit-tested via `outcomeFor`, but no card can produce one.
 - **Artwork** is placeholder (Lucide icon on a CSS gradient), replaceable via `CARD_ART`.
-- **Player hand is empty during the bot turn**, because the hand is discarded at turn end
-  (rule). Players can still read the log, the played-card panel, and help.
-- **No persistence**: refreshing the page starts a new battle.
-- Browser verification was done manually in Chrome (desktop ~1344×876 and a 390px-wide
-  frame); no automated end-to-end (Playwright) suite yet.
-
-## Milestone 2
-
-- Home screen (Start / Rules / Settings), dedicated Rules and Settings screens.
-- Settings: bot speed, reduced motion override.
-- Optional save/resume: `BattleState` is already serializable JSON (store in localStorage
-  with a schema version).
-- Sound and visual polish (card play motion driven by events).
-- Balance pass using a simulation script built on `runBotTurn` (win rate by seat, game length,
-  card usage).
+- **Sound** is basic synthesized tones; no music.
+- Browser checks are manual (Chrome); no automated end-to-end suite (e.g. Playwright).
 
 ## Milestone 3
 
-- Additional opponent archetypes (e.g. a Burn-focused deck, a defensive deck) with
-  per-archetype bot weights.
+- Additional opponent archetypes (e.g. Burn-focused, defensive) with per-archetype decks and
+  bot weights. Re-run the balance simulation per matchup.
 - Optional deck selection.
-- Deployment preparation (static hosting of `dist/`, base path config, CI running
-  `npm test && npm run build`).
+- Deployment preparation: static hosting of `dist/`, base path config, CI running
+  `npm test && npm run build`, maybe a Playwright smoke test.

@@ -1,6 +1,6 @@
 /**
  * Pure battle engine. Public commands:
- *   createBattle(seed)                    -> { state, events }
+ *   createBattle(seed, rules?)            -> { state, events }
  *   playCard(state, side, instanceId)     -> CommandResult
  *   endTurn(state, side)                  -> CommandResult
  *
@@ -19,6 +19,7 @@ import { normalizeSeed, shuffle } from './rng';
 import type {
   BattleEvent,
   BattleEventInput,
+  BattleRules,
   BattleState,
   CardInstance,
   CommandResult,
@@ -35,6 +36,25 @@ export const ENERGY_PER_TURN = 3;
 export const TURN_DRAW_TARGET = 5;
 export const HAND_LIMIT = 8;
 export const LOG_LIMIT = 100;
+
+/** Milestone 1 rules, with no first-turn adjustments. */
+export const BASE_RULES: Readonly<BattleRules> = {
+  maxHp: MAX_HP,
+  energyPerTurn: ENERGY_PER_TURN,
+  turnDrawTarget: TURN_DRAW_TARGET,
+  handLimit: HAND_LIMIT,
+  firstTurnEnergy: ENERGY_PER_TURN,
+  firstTurnDrawTarget: TURN_DRAW_TARGET,
+  secondPlayerFirstTurnDrawBonus: 0,
+  secondPlayerFirstTurnEnergyBonus: 0,
+};
+
+/** Rules used by the game. See docs/BALANCE.md for how they were chosen. */
+export const DEFAULT_RULES: Readonly<BattleRules> = {
+  ...BASE_RULES,
+  firstTurnEnergy: 2,
+  secondPlayerFirstTurnEnergyBonus: 1,
+};
 
 export function opponentOf(side: Side): Side {
   return side === 'player' ? 'bot' : 'player';
@@ -68,8 +88,8 @@ function reject(state: BattleState, reason: RejectionReason): CommandResult {
   return { ok: false, state, reason, message: REJECTION_MESSAGES[reason] };
 }
 
-function newCombatant(deck: CardInstance[]): Combatant {
-  return { hp: MAX_HP, maxHp: MAX_HP, block: 0, burn: 0, energy: 0, deck, hand: [], discard: [] };
+function newCombatant(deck: CardInstance[], maxHp: number): Combatant {
+  return { hp: maxHp, maxHp, block: 0, burn: 0, energy: 0, deck, hand: [], discard: [] };
 }
 
 // ---------------------------------------------------------------------------
@@ -117,7 +137,7 @@ function reshuffleDiscard(ctx: Ctx, side: Side): void {
 function drawCards(ctx: Ctx, side: Side, count: number): void {
   const c = ctx.state.combatants[side];
   for (let i = 0; i < count; i++) {
-    if (c.hand.length >= HAND_LIMIT) {
+    if (c.hand.length >= ctx.state.rules.handLimit) {
       emit(ctx, { type: 'drawSkipped', side, reason: 'handFull' });
       return;
     }
@@ -162,17 +182,28 @@ function startTurn(ctx: Ctx, side: Side): void {
   }
 
   // 4. Refill energy.
-  c.energy = ENERGY_PER_TURN;
+  const { rules } = state;
+  c.energy =
+    state.turnNumber === 1
+      ? rules.firstTurnEnergy
+      : rules.energyPerTurn + (state.turnNumber === 2 ? rules.secondPlayerFirstTurnEnergyBonus : 0);
   emit(ctx, { type: 'energyRefilled', side, energy: c.energy });
 
-  // 5. Draw until hand size reaches 5 (never discards or draws past that).
-  drawCards(ctx, side, Math.max(0, TURN_DRAW_TARGET - c.hand.length));
+  // 5. Draw until hand size reaches the target (never discards or draws past that).
+  const target =
+    state.turnNumber === 1
+      ? rules.firstTurnDrawTarget
+      : rules.turnDrawTarget + (state.turnNumber === 2 ? rules.secondPlayerFirstTurnDrawBonus : 0);
+  drawCards(ctx, side, Math.max(0, target - c.hand.length));
 
   state.phase = actionPhaseFor(side);
 }
 
 /** Creates a new battle and starts the player's first turn. */
-export function createBattle(seed: number): { state: BattleState; events: BattleEvent[] } {
+export function createBattle(
+  seed: number,
+  rules: Readonly<BattleRules> = DEFAULT_RULES,
+): { state: BattleState; events: BattleEvent[] } {
   const normalized = normalizeSeed(seed);
   let rng = normalized;
   const playerShuffle = shuffle(buildStarterDeck('player'), rng);
@@ -181,6 +212,7 @@ export function createBattle(seed: number): { state: BattleState; events: Battle
   rng = botShuffle.nextState;
 
   const state: BattleState = {
+    rules: { ...rules },
     seed: normalized,
     rngState: rng,
     phase: 'SETUP',
@@ -188,8 +220,8 @@ export function createBattle(seed: number): { state: BattleState; events: Battle
     turnNumber: 0,
     winner: null,
     combatants: {
-      player: newCombatant(playerShuffle.items),
-      bot: newCombatant(botShuffle.items),
+      player: newCombatant(playerShuffle.items, rules.maxHp),
+      bot: newCombatant(botShuffle.items, rules.maxHp),
     },
     log: [],
     nextEventId: 1,

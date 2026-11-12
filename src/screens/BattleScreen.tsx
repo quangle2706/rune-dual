@@ -1,9 +1,12 @@
-import { CircleHelp, Handshake, Hourglass, Play, RotateCcw, SkipForward, Sparkles, Trophy, Skull } from 'lucide-react';
+import { CircleHelp, Handshake, Home, Hourglass, Play, RotateCcw, SkipForward, Sparkles, Trophy, Skull } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BattleLog } from '../components/BattleLog';
 import { CardFace, HandCard } from '../components/CardView';
 import { CombatantPanel } from '../components/CombatantPanel';
 import { HelpPanel } from '../components/HelpPanel';
+import { ResultDialog } from '../components/ResultDialog';
+import { soundPlayer, soundsForEvents } from '../audio/sound';
+import { clearSave, saveBattle } from '../persistence/save';
 import { getCardDefinition } from '../content/cards';
 import { REJECTION_MESSAGES, describeCard, keywordHints } from '../content/text';
 import { getEndTurnRejection, getPlayRejection } from '../engine/battle';
@@ -49,13 +52,26 @@ function PhaseBanner({ battle, paused, onRestart }: { battle: BattleState; pause
   }
   const mine = battle.activeSide === 'player';
   return (
-    <div className={`banner ${mine ? 'banner--player' : 'banner--bot'}`} role="status" aria-live="polite">
+    <div
+      key={`${battle.activeSide}-${battle.turnNumber}`}
+      className={`banner banner--enter ${mine ? 'banner--player' : 'banner--bot'}`}
+      role="status"
+      aria-live="polite"
+    >
       {mine ? <Sparkles size={22} aria-hidden="true" /> : <Hourglass size={22} aria-hidden="true" className="spin-slow" />}
       <div>
         <p className="banner__title">{mine ? 'Lượt của bạn' : 'Lượt của Đối thủ'}</p>
         <p className="banner__sub">
           Lượt {battle.turnNumber} ·{' '}
-          {mine ? 'Chọn thẻ rồi bấm “Dùng thẻ”.' : paused ? 'Tạm dừng khi bạn rời tab.' : 'Đối thủ đang suy nghĩ…'}
+          {mine ? (
+            'Chọn thẻ rồi bấm “Dùng thẻ”.'
+          ) : paused ? (
+            'Tạm dừng khi bạn rời tab.'
+          ) : (
+            <>
+              Đối thủ đang suy nghĩ<span className="thinking" aria-hidden="true"><i /><i /><i /></span>
+            </>
+          )}
         </p>
       </div>
     </div>
@@ -66,9 +82,18 @@ const UNAVAILABLE_SHORT: Partial<Record<string, string>> = {
   notEnoughEnergy: 'Thiếu năng lượng',
 };
 
-export function BattleScreen(props: ControllerOptions) {
-  const { ui, select, play, endTurn, restart, dismissNotice, pageHidden } = useBattleController(props);
+export interface BattleScreenProps extends ControllerOptions {
+  /** Return to the home screen (the battle stays saved). Omitted = no home button. */
+  onExit?: () => void;
+  /** Save after every change (default true). */
+  persist?: boolean;
+}
+
+export function BattleScreen({ onExit, persist = true, ...controllerOptions }: BattleScreenProps) {
+  const { ui, select, play, endTurn, restart, dismissNotice, pageHidden } = useBattleController(controllerOptions);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [reviewingBattleId, setReviewingBattleId] = useState<number | null>(null);
+  const lastSoundedEventId = useRef(0);
   const { battle } = ui;
   const player = battle.combatants.player;
   const playerTurn = battle.phase === 'PLAYER_ACTION';
@@ -80,6 +105,29 @@ export function BattleScreen(props: ControllerOptions) {
   const botAction = useMemo(() => latestBotAction(battle.log), [battle.log]);
   const detailRef = useRef<HTMLElement>(null);
 
+  // Persistence (side effect, not rules): save every change; a finished battle is not resumable.
+  useEffect(() => {
+    if (!persist) return;
+    if (ui.battle.phase === 'GAME_OVER') clearSave();
+    else saveBattle(ui.battle, ui.stats);
+  }, [persist, ui.battle, ui.stats]);
+
+  // Sounds derived from the latest events. The ref (kept across StrictMode's
+  // remount) ensures each event sounds at most once.
+  useEffect(() => {
+    const fresh = ui.lastEvents.filter((e) => e.id > lastSoundedEventId.current);
+    if (fresh.length === 0) return;
+    lastSoundedEventId.current = fresh[fresh.length - 1]!.id;
+    soundsForEvents(fresh).forEach((name, i) => soundPlayer.play(name, i * 0.12));
+  }, [ui.lastEvents]);
+
+  // A restart creates a new battle with lower event ids; reset the sound cursor.
+  useEffect(() => {
+    lastSoundedEventId.current = 0;
+  }, [ui.battleId]);
+
+  const showResult = battle.phase === 'GAME_OVER' && battle.winner !== null && reviewingBattleId !== ui.battleId;
+
   // Presentation only: on narrow screens, bring the inspected card into view above the sticky hand.
   useEffect(() => {
     if (!ui.selectedId || typeof window.matchMedia !== 'function') return;
@@ -89,7 +137,7 @@ export function BattleScreen(props: ControllerOptions) {
   }, [ui.selectedId]);
 
   return (
-    <div className="app">
+    <div className="app" onPointerDown={() => soundPlayer.unlock()} onKeyDown={() => soundPlayer.unlock()}>
       <header className="topbar">
         <div className="brand">
           <span className="brand__mark" aria-hidden="true">◆</span>
@@ -98,6 +146,11 @@ export function BattleScreen(props: ControllerOptions) {
           </h1>
         </div>
         <div className="topbar__actions">
+          {onExit && (
+            <button type="button" className="btn btn--ghost" onClick={onExit}>
+              <Home size={18} aria-hidden="true" /> <span>Trang chủ</span>
+            </button>
+          )}
           <button type="button" className="btn btn--ghost" onClick={() => setHelpOpen(true)}>
             <CircleHelp size={18} aria-hidden="true" /> <span>Luật chơi</span>
           </button>
@@ -144,6 +197,7 @@ export function BattleScreen(props: ControllerOptions) {
             active={playerTurn}
             events={ui.lastEvents}
             showEnergy
+            energyPerTurn={battle.rules.energyPerTurn}
           />
 
           <section ref={detailRef} className="panel detail" aria-labelledby="detail-title">
@@ -180,7 +234,7 @@ export function BattleScreen(props: ControllerOptions) {
           <section className="hand-area" aria-labelledby="hand-title">
             <div className="hand-area__head">
               <h2 id="hand-title" className="panel__title">
-                Trên tay ({player.hand.length}/8)
+                Trên tay ({player.hand.length}/{battle.rules.handLimit})
               </h2>
               <button
                 type="button"
@@ -221,6 +275,17 @@ export function BattleScreen(props: ControllerOptions) {
       )}
 
       <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      {showResult && (
+        <ResultDialog
+          winner={battle.winner!}
+          turns={battle.turnNumber}
+          stats={ui.stats}
+          onRestart={restart}
+          onReview={() => setReviewingBattleId(ui.battleId)}
+          onHome={onExit}
+        />
+      )}
     </div>
   );
 }

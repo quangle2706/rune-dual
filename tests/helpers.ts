@@ -1,4 +1,4 @@
-import { createBattle } from '../src/engine/battle';
+import { BASE_RULES, createBattle } from '../src/engine/battle';
 import type { BattleState, CardInstance, Combatant, Side } from '../src/engine/types';
 
 let counter = 0;
@@ -20,12 +20,14 @@ type CombatantPatch = Partial<Omit<Combatant, 'hand' | 'deck' | 'discard'>> & {
 
 /**
  * Creates a battle (player's turn 1, PLAYER_ACTION) and overrides chosen fields.
+ * Uses BASE_RULES (3 energy on every turn) so core-rule tests don't depend on
+ * the first-turn balance adjustments.
  * Card arrays are given as definition ids and receive fresh unique instance ids.
  */
 export function makeState(
   patch: { player?: CombatantPatch; bot?: CombatantPatch; seed?: number } = {},
 ): BattleState {
-  const state = structuredClone(createBattle(patch.seed ?? 42).state);
+  const state = structuredClone(createBattle(patch.seed ?? 42, BASE_RULES).state);
   for (const side of ['player', 'bot'] as const) {
     const p = patch[side];
     if (!p) continue;

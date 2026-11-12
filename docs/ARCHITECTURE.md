@@ -69,8 +69,8 @@ and no component computes rule outcomes.
   draw cards that might find more damage.
 - Incoming damage is a fixed estimate (10), not inferred from the player's history.
 - Weights are hand-tuned, not trained or validated by large simulations.
-- Bot-vs-bot over 500 seeds: the first player won 431, the second 69 — strongly favoring
-  whoever moves first (see NEXT_STEPS).
+- Under Milestone 1 rules, bot-vs-bot strongly favored whoever moved first (84.5%). The
+  Milestone 2 opening-energy rule brings that to 47.7% (see BALANCE.md).
 
 ## UI controller
 
@@ -98,3 +98,66 @@ and no component computes rule outcomes.
 5. Reducer stores the new state, increments `version`, saves `lastEvents`.
 6. React re-renders: HP bars/stats from state, floating numbers and shake from `lastEvents`,
    log from `state.log`, banner from `phase`/`winner`.
+
+## Milestone 2 additions
+
+### Rules as data
+
+`BattleRules` (max HP, energy, draw target, hand limit, first-turn energy/draw, second-player
+bonuses) is stored in `BattleState.rules`. `createBattle(seed, rules = DEFAULT_RULES)`.
+The engine reads numbers from `state.rules`, never from constants, so a saved battle keeps
+its rules and simulations can compare variants. The bot reads `handLimit`/`energyPerTurn`
+from its `BotView` (rule numbers are public).
+
+### Simulation
+
+`src/sim/simulate.ts` runs `runBotTurn` for both seats until a winner (turn cap 200) and
+collects seat win rates, game length and card plays. `scripts/simulate.ts` prints a report
+(`npm run simulate`). Pure and seed-driven, so results are reproducible. See BALANCE.md.
+
+### Screens and navigation
+
+`App` holds `screen: 'home' | 'battle' | 'rules' | 'settings'` in state; no router.
+Each new or resumed battle remounts `BattleScreen` via a `key`, so no timer or reducer
+state can leak between battles.
+
+### Save / resume
+
+- `persistence/storage.ts` wraps localStorage in try/catch (private mode, quota, blocked storage).
+- `BattleScreen` saves `{ schema: 1, savedAt, battle, stats }` in an effect after every state
+  change, and clears the save when the battle ends. Saving is a side effect of the new
+  state, not part of the rules.
+- `loadSave` parses and validates with `engine/validate.ts` (shape, ranges, known card ids,
+  unique instance ids, resting phase, phase/winner/side consistency). Invalid, unreadable, or
+  finished saves are removed instead of loaded.
+- Resume uses `resumeUiState`: no events are replayed, so nothing animates or plays a sound
+  on load. If the save was taken during the bot's turn, the scheduler simply continues it
+  (the per-turn action counter restarts from 0; the engine state is unaffected).
+- Because the RNG state is saved, a resumed battle continues exactly as it would have.
+
+### Match stats
+
+`UiState.stats` accumulates damage dealt, cards played and healing from each command's events
+(the event log is bounded, so it can't be recomputed later). Presentation-only; saved with
+the battle; shown on the result dialog.
+
+### Settings
+
+`settings/settings.ts`: `botSpeed` (delay pairs in `BOT_DELAYS`), `soundEnabled`, `volume`,
+`motion` (`system` | `reduced`). Loaded values are sanitized; unknown values fall back to
+defaults. `motion: 'reduced'` sets `data-motion="reduced"` on `<html>`, which applies the
+same CSS overrides as `prefers-reduced-motion`.
+
+### Sound
+
+`audio/sound.ts` synthesizes short tones with Web Audio (no files, no network).
+`soundsForEvents(events)` is a pure mapping (tested); `BattleScreen` plays the sounds for each
+new batch of events. A ref holding the last sounded event id keeps sounds from playing
+twice under StrictMode or on re-render. The AudioContext is created/resumed on the first
+pointer or key press (browser autoplay policy). Where Web Audio is missing it's a silent no-op.
+
+### Visual polish
+
+All derived from state/events, never changing them: HP damage trail (a delayed "ghost" bar),
+turn banner entrance, "thinking" dots during the bot turn, played-card pop-in, result dialog.
+All are disabled by reduced motion.

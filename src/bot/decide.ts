@@ -4,7 +4,7 @@
  * test and contain no timing logic.
  */
 import { getCardDefinition } from '../content/cards';
-import { HAND_LIMIT, actionPhaseFor } from '../engine/battle';
+import { actionPhaseFor } from '../engine/battle';
 import type { CardDefinition, CardInstance } from '../engine/types';
 import type { BotView } from './view';
 
@@ -108,7 +108,7 @@ export function scoreCard(view: BotView, def: CardDefinition): number {
         break;
       }
       case 'draw': {
-        const room = HAND_LIMIT - (self.hand.length - 1);
+        const room = view.handLimit - (self.hand.length - 1);
         const available = self.deckCount + self.discardCount;
         const drawn = Math.max(0, Math.min(effect.count, room, available));
         const energyAfter = self.energy - def.cost;

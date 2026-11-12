@@ -34,9 +34,10 @@ interface Props {
   events: readonly BattleEvent[];
   latestAction?: string | null;
   showEnergy?: boolean;
+  energyPerTurn?: number;
 }
 
-export function CombatantPanel({ side, combatant, active, events, latestAction, showEnergy }: Props) {
+export function CombatantPanel({ side, combatant, active, events, latestAction, showEnergy, energyPerTurn = 3 }: Props) {
   const c = combatant;
   const pct = Math.round((c.hp / c.maxHp) * 100);
   const chips = chipsFor(side, events);
@@ -58,6 +59,7 @@ export function CombatantPanel({ side, combatant, active, events, latestAction, 
           {active && <span className="combatant__turn">Đang hành động</span>}
         </div>
         <div className="hpbar" role="meter" aria-label={TERMS.hp} aria-valuemin={0} aria-valuemax={c.maxHp} aria-valuenow={c.hp}>
+          <div className="hpbar__ghost" style={{ width: `${pct}%` }} />
           <div className="hpbar__fill" style={{ width: `${pct}%` }} />
           <span className="hpbar__text">
             <Heart size={14} aria-hidden="true" /> {c.hp}/{c.maxHp}
@@ -79,7 +81,7 @@ export function CombatantPanel({ side, combatant, active, events, latestAction, 
               <Zap size={16} aria-hidden="true" />
               <span className="stat__label">{TERMS.energy}</span>
               <strong>
-                {c.energy}/3
+                {c.energy}/{energyPerTurn}
               </strong>
             </li>
           )}

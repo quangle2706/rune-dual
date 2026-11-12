@@ -13,7 +13,7 @@ function renderApp(seeds: number[] = [SEED, 777, 888]) {
   const seedSource = () => seeds[Math.min(i++, seeds.length - 1)]!;
   return render(
     <StrictMode>
-      <App initialSeed={seeds[0]} seedSource={seedSource} botThinkDelay={DELAY} botStepDelay={DELAY} />
+      <App initialScreen="battle" initialSeed={seeds[0]} seedSource={seedSource} botThinkDelay={DELAY} botStepDelay={DELAY} />
     </StrictMode>,
   );
 }
@@ -32,10 +32,13 @@ function advance(ms: number) {
   });
 }
 
+const OVER = /Chiến thắng!|Thất bại|^Hòa$/;
+const isOver = () => screen.queryAllByText(OVER).length > 0;
+
 /** Advances time until the player's turn returns (or the battle ends). */
 function runUntilPlayerTurn(maxSteps = 60) {
   for (let i = 0; i < maxSteps; i++) {
-    if (screen.queryByText('Lượt của bạn') || screen.queryByText(/Chiến thắng!|Thất bại|^Hòa$/)) return;
+    if (screen.queryByText('Lượt của bạn') || isOver()) return;
     advance(DELAY);
   }
   throw new Error('Bot never returned control');
@@ -146,23 +149,25 @@ describe('Battle UI', () => {
   it('plays a full match to completion via repeated end turns', () => {
     renderApp();
     for (let turn = 0; turn < 200; turn++) {
-      if (screen.queryByText(/Chiến thắng!|Thất bại|^Hòa$/)) break;
+      if (isOver()) break;
       // Play every affordable card, then end the turn.
       for (let n = 0; n < 10; n++) {
         const playable = handButtons().find((b) => !(b.getAttribute('aria-label') ?? '').includes('Thiếu năng lượng'));
-        if (!playable || screen.queryByText(/Chiến thắng!|Thất bại|^Hòa$/)) break;
+        if (!playable || isOver()) break;
         fireEvent.click(playable);
         const play = screen.getByRole('button', { name: 'Dùng thẻ' });
         if ((play as HTMLButtonElement).disabled) break;
         fireEvent.click(play);
       }
-      if (screen.queryByText(/Chiến thắng!|Thất bại|^Hòa$/)) break;
+      if (isOver()) break;
       fireEvent.click(screen.getByRole('button', { name: 'Kết thúc lượt' }));
       runUntilPlayerTurn();
     }
-    expect(screen.getByText(/Chiến thắng!|Thất bại|^Hòa$/)).toBeInTheDocument();
+    expect(isOver()).toBe(true);
+    expect(screen.getByRole('dialog', { name: OVER })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Kết thúc lượt' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: /Chơi ván mới/ }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: OVER })).getByRole('button', { name: /Chơi ván mới/ }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByText('Lượt của bạn')).toBeInTheDocument();
   });
 });

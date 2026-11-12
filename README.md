@@ -3,8 +3,13 @@
 An original single-player, turn-based card battle against a heuristic bot.
 Built with React + TypeScript + Vite as a learning project. All player-facing text is Vietnamese.
 
-**Status: Milestone 1 complete** — one full player-vs-bot match with 12 cards, fixed decks,
-seeded shuffle, energy/HP/block/Burn, battle log, restart, responsive UI.
+**Status: Milestone 2 complete.**
+
+- Milestone 1: full player-vs-bot match with 12 cards, fixed decks, seeded shuffle,
+  energy/HP/block/Burn, battle log, restart, responsive UI.
+- Milestone 2: Home / Rules / Settings screens, Victory/Defeat/Draw result screen, automatic
+  save & resume, synthesized sound effects, visual polish, and a simulation-driven balance fix
+  (first-player win rate 84.5% → 47.7% in bot-vs-bot play).
 
 ## Requirements
 
@@ -15,30 +20,38 @@ seeded shuffle, energy/HP/block/Burn, battle log, restart, responsive UI.
 ```bash
 npm install        # install exact versions from package-lock.json
 npm run dev        # dev server at http://localhost:5173
-npm test           # Vitest: engine, bot, card text, UI integration tests
+npm test           # Vitest: engine, bot, persistence, sound mapping, UI/screen tests
 npm run typecheck  # TypeScript (tsc) with strict settings
 npm run build      # typecheck + production build into dist/
 npm run preview    # serve the production build locally
+npm run simulate   # bot-vs-bot balance report (default 2000 games per variant; ~1.5 min)
+npm run simulate -- 300   # quicker run with 300 games per variant
 ```
 
 ## Project layout
 
 ```
 src/
-  engine/     Pure battle rules: types, seeded RNG, commands (no React)
-  content/    Card definitions, starter deck, generated Vietnamese text
-  bot/        Public bot view, pure decision function, turn runner
-  hooks/      useBattleController: useReducer + bot timing scheduler
-  components/ Presentational pieces (cards, panels, log, help)
-  screens/    BattleScreen (Milestone 1 opens directly into battle)
-  styles/     global.css with design tokens (CSS variables)
-tests/        Vitest + React Testing Library
-docs/         Rules, architecture, card catalog, next steps
+  engine/       Pure battle rules: types, seeded RNG, commands, save validation (no React)
+  content/      Card definitions, starter deck, generated Vietnamese text
+  bot/          Public bot view, pure decision function, turn runner
+  sim/          Headless bot-vs-bot simulation (balance review)
+  persistence/  Safe localStorage wrapper, battle save/resume
+  settings/     Settings model (bot speed, sound, motion) and storage
+  audio/        Web Audio synthesized sound effects (no audio files)
+  hooks/        useBattleController: useReducer + bot timing scheduler
+  components/   Presentational pieces (cards, panels, log, help, result dialog)
+  screens/      Home, Battle, Rules, Settings
+  styles/       global.css with design tokens (CSS variables)
+scripts/        simulate.ts (npm run simulate)
+tests/          Vitest + React Testing Library
+docs/           Rules, architecture, card catalog, balance, next steps
 ```
 
 ## Documentation
 
-- [docs/GAME_RULES.md](docs/GAME_RULES.md) — exact battle rules
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — engine/bot/UI design and data flow
-- [docs/CARD_CATALOG.md](docs/CARD_CATALOG.md) — the 12 cards and starter deck
-- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) — known limitations and future milestones
+- [docs/GAME_RULES.md](docs/GAME_RULES.md): exact battle rules
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): engine/bot/UI design and data flow
+- [docs/CARD_CATALOG.md](docs/CARD_CATALOG.md): the 12 cards and starter deck
+- [docs/BALANCE.md](docs/BALANCE.md): simulation method, results, and the chosen rule change
+- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md): known limitations and future milestones

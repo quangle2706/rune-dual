@@ -26,6 +26,9 @@ export interface BotView {
   activeSide: Side;
   winner: Winner;
   turnNumber: number;
+  /** Rule numbers are public knowledge. */
+  handLimit: number;
+  energyPerTurn: number;
   self: PublicCombatant & { energy: number; hand: readonly CardInstance[] };
   opponent: PublicCombatant;
   publicLog: readonly BattleEvent[];
@@ -53,6 +56,8 @@ export function buildBotView(state: BattleState, side: Side): BotView {
     activeSide: state.activeSide,
     winner: state.winner,
     turnNumber: state.turnNumber,
+    handLimit: state.rules.handLimit,
+    energyPerTurn: state.rules.energyPerTurn,
     self: { ...publicInfo(state, side), energy: self.energy, hand: self.hand.map((c) => ({ ...c })) },
     opponent: publicInfo(state, foe),
     publicLog: state.log.filter((e) => !(e.type === 'cardDrawn' && e.side === foe)),

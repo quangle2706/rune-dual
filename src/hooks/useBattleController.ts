@@ -13,7 +13,8 @@ import { useCallback, useEffect, useReducer, useState } from 'react';
 import { applyBotStep } from '../bot/runner';
 import type { BotDecision } from '../bot/decide';
 import { createBattle, endTurn, playCard } from '../engine/battle';
-import type { BattleEvent, BattleState } from '../engine/types';
+import type { BattleEvent, BattleState, CommandResult } from '../engine/types';
+import { emptyStats, type MatchStats } from '../persistence/save';
 
 export interface UiState {
   /** Increments on every restart; stale timers from older battles are ignored. */
@@ -22,11 +23,13 @@ export interface UiState {
   version: number;
   battle: BattleState;
   selectedId: string | null;
-  /** Events from the most recent command (drives animations only). */
+  /** Events from the most recent command (drives animations and sounds only). */
   lastEvents: BattleEvent[];
   notice: string | null;
   botActionsThisTurn: number;
   lastBotDecision: BotDecision | null;
+  /** Presentation-only totals for the result screen (the event log is bounded). */
+  stats: MatchStats;
 }
 
 export type UiAction =
@@ -48,6 +51,44 @@ export function initUiState(seed: number, battleId = 1): UiState {
     notice: null,
     botActionsThisTurn: 0,
     lastBotDecision: null,
+    stats: emptyStats(),
+  };
+}
+
+/** Resumes a saved battle. No events are replayed, so nothing animates or sounds on load. */
+export function resumeUiState(battle: BattleState, stats: MatchStats = emptyStats()): UiState {
+  return {
+    battleId: 1,
+    version: 0,
+    battle,
+    selectedId: null,
+    lastEvents: [],
+    notice: null,
+    botActionsThisTurn: 0,
+    lastBotDecision: null,
+    stats,
+  };
+}
+
+export function accumulateStats(stats: MatchStats, events: readonly BattleEvent[]): MatchStats {
+  const next: MatchStats = structuredClone(stats);
+  for (const e of events) {
+    if (e.type === 'damageDealt') next.damageDealt[e.source] += e.hpLoss;
+    else if (e.type === 'burnTicked') next.damageDealt[e.side === 'player' ? 'bot' : 'player'] += e.damage;
+    else if (e.type === 'cardPlayed') next.cardsPlayed[e.side] += 1;
+    else if (e.type === 'healed') next.healed[e.side] += e.amount;
+  }
+  return next;
+}
+
+function applied(ui: UiState, result: Extract<CommandResult, { ok: true }>): UiState {
+  return {
+    ...ui,
+    version: ui.version + 1,
+    battle: result.state,
+    lastEvents: result.events,
+    notice: null,
+    stats: accumulateStats(ui.stats, result.events),
   };
 }
 
@@ -60,38 +101,19 @@ export function uiReducer(ui: UiState, action: UiAction): UiState {
     case 'play': {
       const result = playCard(ui.battle, 'player', action.instanceId);
       if (!result.ok) return { ...ui, notice: result.message };
-      return {
-        ...ui,
-        version: ui.version + 1,
-        battle: result.state,
-        lastEvents: result.events,
-        selectedId: null,
-        notice: null,
-      };
+      return { ...applied(ui, result), selectedId: null };
     }
     case 'endTurn': {
       const result = endTurn(ui.battle, 'player');
       if (!result.ok) return { ...ui, notice: result.message };
-      return {
-        ...ui,
-        version: ui.version + 1,
-        battle: result.state,
-        lastEvents: result.events,
-        selectedId: null,
-        notice: null,
-        botActionsThisTurn: 0,
-        lastBotDecision: null,
-      };
+      return { ...applied(ui, result), selectedId: null, botActionsThisTurn: 0, lastBotDecision: null };
     }
     case 'botStep': {
       if (action.battleId !== ui.battleId || action.version !== ui.version) return ui; // stale timer
       const step = applyBotStep(ui.battle, 'bot', ui.botActionsThisTurn);
       if (!step || !step.result.ok) return ui;
       return {
-        ...ui,
-        version: ui.version + 1,
-        battle: step.result.state,
-        lastEvents: step.result.events,
+        ...applied(ui, step.result),
         botActionsThisTurn: step.decision.type === 'endTurn' ? 0 : ui.botActionsThisTurn + 1,
         lastBotDecision: step.decision,
       };
@@ -121,6 +143,8 @@ function usePageHidden(): boolean {
 export interface ControllerOptions {
   initialSeed?: number;
   seedSource?: () => number;
+  /** Resume this battle instead of creating a new one. */
+  resume?: { battle: BattleState; stats: MatchStats };
   /** Delay before the bot's first action of a turn (ms). */
   botThinkDelay?: number;
   /** Delay between subsequent bot actions (ms). */
@@ -134,10 +158,13 @@ export function useBattleController(options: ControllerOptions = {}) {
   const {
     initialSeed,
     seedSource = makeSeed,
+    resume,
     botThinkDelay = DEFAULT_BOT_THINK_DELAY,
     botStepDelay = DEFAULT_BOT_STEP_DELAY,
   } = options;
-  const [ui, dispatch] = useReducer(uiReducer, undefined, () => initUiState(initialSeed ?? seedSource()));
+  const [ui, dispatch] = useReducer(uiReducer, undefined, () =>
+    resume ? resumeUiState(resume.battle, resume.stats) : initUiState(initialSeed ?? seedSource()),
+  );
   const pageHidden = usePageHidden();
 
   const { phase } = ui.battle;

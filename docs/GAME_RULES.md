@@ -39,8 +39,14 @@ Exactly one side is active. The **player takes the first turn**.
 1. Clear that side's remaining block.
 2. If Burn > 0: lose HP equal to Burn (**bypasses block**), then Burn −1.
 3. Check battle end (a Burn tick can end the game; steps 4–5 are then skipped).
-4. Set energy to 3 (unspent energy does not carry over).
+4. Set energy to 3 (unspent energy does not carry over). **Opening exception** (Milestone 2
+   balance, see BALANCE.md): battle turn 1 (the player) gets **2** energy; battle turn 2 (the
+   bot's first turn) gets **4**.
 5. Draw until hand size is 5. If the hand already holds 5+, draw nothing.
+
+All of these numbers come from `BattleRules` (`DEFAULT_RULES` in `src/engine/battle.ts`),
+which is stored in each battle's state. `BASE_RULES` are the Milestone 1 numbers
+(3 energy every turn).
 
 ## Playing a card
 

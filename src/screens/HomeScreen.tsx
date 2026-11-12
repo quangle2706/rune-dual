@@ -1,0 +1,53 @@
+import { BookOpen, Play, RotateCcw, Settings as SettingsIcon } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+
+interface Props {
+  canResume: boolean;
+  resumeTurn: number | null;
+  onStart: () => void;
+  onResume: () => void;
+  onRules: () => void;
+  onSettings: () => void;
+}
+
+export function HomeScreen({ canResume, resumeTurn, onStart, onResume, onRules, onSettings }: Props) {
+  const firstRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => firstRef.current?.focus(), []);
+
+  return (
+    <main className="home">
+      <div className="home__emblem" aria-hidden="true">
+        <div className="home__ring" />
+        <div className="home__ring home__ring--inner" />
+        <span className="home__glyph">◆</span>
+      </div>
+      <h1 className="home__title">
+        Rune Duel
+        <span className="home__subtitle">Đấu Ấn</span>
+      </h1>
+      <p className="home__tagline">Đấu thẻ theo lượt với Người Gác Ấn. Dùng Năng lượng khôn ngoan, giữ Giáp, đốt cháy đối thủ.</p>
+      <nav className="home__menu" aria-label="Menu chính">
+        {canResume && (
+          <button ref={firstRef} type="button" className="btn btn--gold home__btn" onClick={onResume}>
+            <RotateCcw size={20} aria-hidden="true" /> Tiếp tục trận
+            {resumeTurn !== null && <span className="home__hint">Lượt {resumeTurn}</span>}
+          </button>
+        )}
+        <button
+          ref={canResume ? undefined : firstRef}
+          type="button"
+          className={`btn home__btn ${canResume ? '' : 'btn--gold'}`}
+          onClick={onStart}
+        >
+          <Play size={20} aria-hidden="true" /> {canResume ? 'Trận mới' : 'Bắt đầu'}
+        </button>
+        <button type="button" className="btn home__btn" onClick={onRules}>
+          <BookOpen size={20} aria-hidden="true" /> Luật chơi
+        </button>
+        <button type="button" className="btn home__btn" onClick={onSettings}>
+          <SettingsIcon size={20} aria-hidden="true" /> Cài đặt
+        </button>
+      </nav>
+    </main>
+  );
+}

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CARD_DEFINITIONS } from '../src/content/cards';
 import { buildStarterDeck } from '../src/content/decks';
 import {
+  BASE_RULES,
+  DEFAULT_RULES,
   HAND_LIMIT,
   LOG_LIMIT,
   createBattle,
@@ -51,8 +53,8 @@ describe('setup and decks', () => {
     expect(new Set(all.map((c) => c.instanceId)).size).toBe(40);
   });
 
-  it('starts on the player turn with 5 cards, 3 energy, 30 HP', () => {
-    const { state } = createBattle(1);
+  it('starts on the player turn with 5 cards, 3 energy, 30 HP (base rules)', () => {
+    const { state } = createBattle(1, BASE_RULES);
     expect(state.phase).toBe('PLAYER_ACTION');
     expect(state.activeSide).toBe('player');
     expect(state.turnNumber).toBe(1);
@@ -61,6 +63,36 @@ describe('setup and decks', () => {
     expect(state.combatants.player.energy).toBe(3);
     expect(state.combatants.player.hp).toBe(30);
     expect(state.combatants.bot.hand).toHaveLength(0);
+  });
+});
+
+describe('first-turn balance rules', () => {
+  it('default rules: first player gets 2 energy on turn 1, second player 4 on its first turn, then 3', () => {
+    let state = createBattle(3).state;
+    expect(state.rules).toEqual(DEFAULT_RULES);
+    expect(state.combatants.player.energy).toBe(2);
+    state = ok(endTurn(state, 'player'));
+    expect(state.combatants.bot.energy).toBe(4);
+    state = ok(endTurn(state, 'bot'));
+    expect(state.combatants.player.energy).toBe(3);
+    state = ok(endTurn(state, 'player'));
+    expect(state.combatants.bot.energy).toBe(3);
+  });
+
+  it('first-turn draw target and second-player draw bonus are configurable', () => {
+    const rules = { ...BASE_RULES, firstTurnDrawTarget: 3, secondPlayerFirstTurnDrawBonus: 1 };
+    let state = createBattle(3, rules).state;
+    expect(state.combatants.player.hand).toHaveLength(3);
+    state = ok(endTurn(state, 'player'));
+    expect(state.combatants.bot.hand).toHaveLength(6);
+    state = ok(endTurn(state, 'bot'));
+    expect(state.combatants.player.hand).toHaveLength(5);
+  });
+
+  it('max HP comes from the rules', () => {
+    const state = createBattle(3, { ...BASE_RULES, maxHp: 40 }).state;
+    expect(state.combatants.player.hp).toBe(40);
+    expect(state.combatants.bot.maxHp).toBe(40);
   });
 });
 
